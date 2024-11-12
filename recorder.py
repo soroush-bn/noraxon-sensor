@@ -15,6 +15,7 @@ def record(name="saved.avi"):
     # depthwriter = cv2.VideoWriter(depth_path, cv2.VideoWriter_fourcc(*'XVID'), 30, (640,480), 1)
 
     pipeline.start(config)
+    print("start recording")
 
     try:
         while True:
@@ -39,6 +40,7 @@ def record(name="saved.avi"):
     finally:
         colorwriter.release()
         # depthwriter.release()
+        print("stoped recording")
         pipeline.stop()
 
 

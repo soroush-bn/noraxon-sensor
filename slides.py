@@ -5,7 +5,13 @@ import pandas as pd
 from functools import wraps
 from time import time
 import argparse
+import subprocess
+import yaml
+import numpy as np
 
+# Load the YAML file
+with open("config.yaml", "r") as file:
+    config = yaml.safe_load(file)
 
 def timing(f):
     @wraps(f)
@@ -19,8 +25,8 @@ def timing(f):
     return wrap
 
 @timing
-def show_slides(name,reps):
-    image_paths = [f"experiment1_images/{i}.jpg" for i in range(1, 17)]
+def show_slides(experiment_name,first_name,last_name,reps,slides_images_path,gesture_duration,rest_duration):
+    image_paths = [f"{slides_images_path}/{i}.jpg" for i in range(1, 17)]
     df = pd.DataFrame(image_paths, columns=['image_path'])
 
     sample_img = mpimg.imread(df.iloc[0]['image_path'])
@@ -32,6 +38,12 @@ def show_slides(name,reps):
     names = ["Thumb Extension","index Extension","Middle Extension","Ring Extension",
              "Pinky Extension","Thumbs Up","Right Angle","Peace","OK","Horn","Hang Loose",
              "Power Grip","Hand Open","Wrist Extension","Wrist Flexion","Ulnar deviation","Radial Deviation"]
+    show_phase1(ax)
+    #start the script
+    recording_name = f'{first_name}_{last_name}_{experiment_name}.avi'
+    command = ["python", "recorder.py", "--name", recording_name]
+    subprocess.Popen(command)
+    timestamped_labels = [] 
     for index, row in df.iterrows():
         img = mpimg.imread(row['image_path'])
         for rep in range(reps):        
@@ -40,20 +52,23 @@ def show_slides(name,reps):
             
             ax.axis('off')  # Turn off axis
             image_name = names[index]
+            timestamped_labels.append((time(), image_name))
             ax.text(0.5, 0.95, image_name, transform=ax.transAxes, 
                     ha='center', va='top', fontsize=20, fontweight='bold', color='white')
-            plt.pause(2)
-            show_rest(ax)
+            plt.pause(gesture_duration)
+            timestamped_labels.append((time(), "rest"))
+            show_rest(ax,rest_duration)
 
 
     print("finished slides")
     plt.ioff()
     # plt.show()
     plt.close()
+    timestamps_df = pd.DataFrame(timestamped_labels, columns=['time_stamp', 'label'])
 
 
 
-def show_rest(ax):
+def show_rest(ax,rest_duration):
     img = mpimg.imread(r"experiment1_images\rest.jpg")
         
     ax.clear()
@@ -62,13 +77,58 @@ def show_rest(ax):
     ax.text(0.5, 0.95, "Rest", transform=ax.transAxes, 
                     ha='center', va='top', fontsize=20, fontweight='bold', color='white')
 
-    plt.pause(2)
+    plt.pause(rest_duration)
 
+def show_phase1(ax):
+    img = mpimg.imread(r"experiment1_images\phase1.jpg")
+        
+    ax.clear()
+    ax.imshow(img)
+    ax.axis('off')  # Turn off axis
+    ax.text(0.5, 0.95, "Phase1", transform=ax.transAxes, 
+                    ha='center', va='top', fontsize=20, fontweight='bold', color='white')
+
+    plt.pause(3)
+def save_labels(df):
+    if len(df)>200: 
+        raise Exception("cannot extend the df multiple times!!!!")
+    expanded_df = pd.DataFrame(columns=df.columns)
+    for i in range(len(df) - 1):
+        start_time = df.loc[i, 'time_stamp']
+        end_time = df.loc[i + 1, 'time_stamp']
+        label = df.loc[i, 'label']
+        
+        time_diff = end_time - start_time
+        num_rows = int(time_diff * config["emg_frequency"])  # 2000 rows per second
+        
+        new_time_stamps = np.linspace(start_time, end_time, num=num_rows, endpoint=False)
+        new_rows = pd.DataFrame({
+            'time_stamp': new_time_stamps,
+            'label': [label] * num_rows
+        })
+        
+        expanded_df = pd.concat([expanded_df, new_rows], ignore_index=True)
+
+    expanded_df = pd.concat([expanded_df, df.iloc[[-1]]], ignore_index=True)
+    expanded_df.reset_index(drop=True, inplace=True)
+    expanded_df.to_csv(f'{config["first_name"]}_{config["last_name"]}_{config["experiment_name"]}_labels.csv')
+    print("label df saved")
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description="no desc.")
-    parser.add_argument("--name", type=str, required=True)
-    parser.add_argument("--reps", type=int, required=True)
+    parser.add_argument("--first_name", type=str, default=config["first_name"])
+    parser.add_argument("--last_name", type=str, default=config["last_name"])
+    parser.add_argument("--experiment_name", type=str, default=config["experiment_name"])
+    parser.add_argument("--slides_images_path", type=str, default=config["slides_images_path"])
+    
+    parser.add_argument("--reps", type=str, default=config["number_of_gesture_repetition"])
+    parser.add_argument("--gesture_duration", type=int, default=config["gesture_duration"])
+    parser.add_argument("--rest_duration", type=int, default=config["rest_duration"])
     
     args = parser.parse_args()
-    show_slides(args.name,args.reps)
+    print("\n starting experiment with this config: \n")
+    print(args)
+    print()
+    # show_slides(args.experiment_name,args.first_name,args.last_name,args.reps,args.slides_images_path,args.gesture_duration,args.rest_duration)
+    df = pd.read_csv("Soroushali_Baghernezhad_first_labels.csv")
+    save_labels(df)
