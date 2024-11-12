@@ -1,0 +1,8 @@
+first_name: Soroush
+last_name: Baghernezhad
+experiment_name: first
+gesture_duration: 2 
+rest_duration: 2
+number_of_gesture_repetition: 4 
+
+file_path: /home/user/data/example.txt
