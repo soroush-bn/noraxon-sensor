@@ -1,8 +1,12 @@
-first_name: Soroush
+first_name: Soroushali
 last_name: Baghernezhad
 experiment_name: first
-gesture_duration: 2 
-rest_duration: 2
-number_of_gesture_repetition: 4 
-
+gesture_duration: 1 
+rest_duration: 1
+number_of_gesture_repetition: 1 
+emg_frequency: 2000
+IMU_frequency: 200
+camera_fps: 60
 file_path: /home/user/data/example.txt
+
+slides_images_path: experiment1_images
