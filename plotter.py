@@ -7,7 +7,12 @@ def plot_emg_data(file_path, window_size=4000, play_all=False):
     df = pd.read_csv(file_path)
     
     time_data = df['time']
-    emg_channels = [f'emg{i}' for i in range(1, 9)]
+    emg_channels_pairs = [
+        [f'emg1', f'emg2'],
+        [f'emg3', f'emg4'],
+        [f'emg5', f'emg6'],
+        [f'emg7', f'emg8']
+    ]
     
     num_frames = len(df) // window_size if play_all else 1
     
@@ -20,23 +25,30 @@ def plot_emg_data(file_path, window_size=4000, play_all=False):
         
         time_window = time_data[start_idx:end_idx]
         
-        plt.figure(figsize=(10, 6))
+        fig, axes = plt.subplots(2, 2, figsize=(12, 8), sharex=True)
+        axes = axes.flatten()  # Flatten the axes array for easy indexing
         
-        for channel in emg_channels:
-            if channel in df.columns:
-                plt.plot(time_window, df[channel][start_idx:end_idx], label=channel)
+        # Plot each pair of EMG channels in separate subplots
+        for i, (ax, channels) in enumerate(zip(axes, emg_channels_pairs)):
+            for channel in channels:
+                if channel in df.columns:
+                    ax.plot(time_window, df[channel][start_idx:end_idx], label=channel)
+            ax.set_ylabel("EMG Signal (uV)")
+            ax.set_title(f"EMG Channels {channels[0][-1]} and {channels[1][-1]}")
+            ax.legend()
         
-        plt.xlabel("Time (s)")
-        plt.ylabel("EMG Signal (uV)")
-        plt.title(f"EMG Data (8 Channels) - Window {frame + 1}/{num_frames}")
-        plt.legend()
+        # Add the x-axis label to the bottom subplots only
+        for ax in axes[2:]:
+            ax.set_xlabel("Time (s)")
         
+        plt.tight_layout()
         plt.show()
         
         if play_all:
-            time.sleep(0.5)
-            plt.close() 
+            time.sleep(0.5)  # Adjust this to control the speed between windows
+            plt.close()  # Close the plot to avoid overlapping if in play mode
 
+        # Break the loop if only one window is to be shown
         if not play_all:
             break
 

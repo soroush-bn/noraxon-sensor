@@ -1,36 +1,50 @@
 import pyrealsense2 as rs
 import numpy as np
 import cv2
-import os
+import argparse
+#working one 
+def record(name="saved.avi"):
+    pipeline = rs.pipeline()
+    config = rs.config()
+    # config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
+    config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
 
-bag_file_path = "path_to_your_file.bag"  
-output_dir = "output_images"  
+    color_path = name
+    # depth_path = 'V00P00A00C00_depth.avi'
+    colorwriter = cv2.VideoWriter(color_path, cv2.VideoWriter_fourcc(*'XVID'), 30, (640,480), 1)
+    # depthwriter = cv2.VideoWriter(depth_path, cv2.VideoWriter_fourcc(*'XVID'), 30, (640,480), 1)
 
-os.makedirs(output_dir, exist_ok=True)
+    pipeline.start(config)
 
-pipeline = rs.pipeline()
-config = rs.config()
-config.enable_device_from_file(bag_file_path)
+    try:
+        while True:
+            frames = pipeline.wait_for_frames()
+            # depth_frame = frames.get_depth_frame()
+            color_frame = frames.get_color_frame()
+            if  not color_frame: #not depth_frame or
+                continue
+            
+            #convert images to numpy arrays
+            # depth_image = np.asanyarray(depth_frame.get_data())
+            color_image = np.asanyarray(color_frame.get_data())
+            # depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
+            
+            colorwriter.write(color_image)
+            # depthwriter.write(depth_colormap)
+            
+            # cv2.imshow('Stream', depth_colormap)
+            
+            if cv2.waitKey(1) == ord("q"):
+                break
+    finally:
+        colorwriter.release()
+        # depthwriter.release()
+        pipeline.stop()
 
-pipeline.start(config)
 
-try:
-    frame_count = 0
-    while True:
-        frames = pipeline.wait_for_frames()
-        color_frame = frames.get_color_frame()
-        if not color_frame:
-            continue
-        
-        color_image = np.asanyarray(color_frame.get_data())
-        
-        image_filename = os.path.join(output_dir, f"image_{frame_count:04d}.png")
-        cv2.imwrite(image_filename, color_image)
-        frame_count += 1
-
-        cv2.imshow('Color Frame', color_image)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-finally:
-    pipeline.stop()
-    cv2.destroyAllWindows()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="no desc.")
+    parser.add_argument("--name", type=str, required=True)
+    
+    args = parser.parse_args()
+    record(args.name)
