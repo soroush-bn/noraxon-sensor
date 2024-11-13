@@ -26,6 +26,8 @@ def timing(f):
 
 @timing
 def show_slides(experiment_name,first_name,last_name,reps,slides_images_path,gesture_duration,rest_duration):
+
+
     image_paths = [f"{slides_images_path}/{i}.jpg" for i in range(1, 17)]
     df = pd.DataFrame(image_paths, columns=['image_path'])
 
@@ -40,9 +42,7 @@ def show_slides(experiment_name,first_name,last_name,reps,slides_images_path,ges
              "Power Grip","Hand Open","Wrist Extension","Wrist Flexion","Ulnar deviation","Radial Deviation"]
     show_phase1(ax)
     #start the script
-    recording_name = f'{first_name}_{last_name}_{experiment_name}.avi'
-    command = ["python", "recorder.py", "--name", recording_name]
-    subprocess.Popen(command)
+
     timestamped_labels = [] 
     for index, row in df.iterrows():
         img = mpimg.imread(row['image_path'])
@@ -65,7 +65,7 @@ def show_slides(experiment_name,first_name,last_name,reps,slides_images_path,ges
     # plt.show()
     plt.close()
     timestamps_df = pd.DataFrame(timestamped_labels, columns=['time_stamp', 'label'])
-
+    save_labels(timestamps_df)
 
 
 def show_rest(ax,rest_duration):
@@ -88,7 +88,7 @@ def show_phase1(ax):
     ax.text(0.5, 0.95, "Phase1", transform=ax.transAxes, 
                     ha='center', va='top', fontsize=20, fontweight='bold', color='white')
 
-    plt.pause(3)
+    plt.pause(config["phase1_wait"])
 def save_labels(df):
     if len(df)>200: 
         raise Exception("cannot extend the df multiple times!!!!")
@@ -111,7 +111,7 @@ def save_labels(df):
 
     expanded_df = pd.concat([expanded_df, df.iloc[[-1]]], ignore_index=True)
     expanded_df.reset_index(drop=True, inplace=True)
-    expanded_df.to_csv(f'{config["first_name"]}_{config["last_name"]}_{config["experiment_name"]}_labels.csv')
+    expanded_df.to_csv(f'{config["saving_dir"]}/{config["experiment_name"]}_{config["first_name"]}_{config["last_name"]}_{config["date"]}_labels.csv')
     print("label df saved")
 
 if __name__=="__main__":
@@ -129,6 +129,8 @@ if __name__=="__main__":
     print("\n starting experiment with this config: \n")
     print(args)
     print()
-    # show_slides(args.experiment_name,args.first_name,args.last_name,args.reps,args.slides_images_path,args.gesture_duration,args.rest_duration)
-    df = pd.read_csv("Soroushali_Baghernezhad_first_labels.csv")
-    save_labels(df)
+    recording_name = f'{config["saving_dir"]}/{config["experiment_name"]}_{config["first_name"]}_{config["last_name"]}_{config["date"]}.avi'
+
+    command = ["python", "recorder.py", "--name", recording_name]
+    subprocess.Popen(command)
+    show_slides(args.experiment_name,args.first_name,args.last_name,args.reps,args.slides_images_path,args.gesture_duration,args.rest_duration)
