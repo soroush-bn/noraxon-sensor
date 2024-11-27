@@ -4,3 +4,5 @@
 *.txt
 *.avi
 ./.vscode
+./temp_data/
+./temp_files/
