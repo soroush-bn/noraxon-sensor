@@ -1,9 +1,17 @@
-
+import yaml
 import os 
 import pandas as pd 
 import re
 import argparse
 import numpy as np 
+
+with open("config.yaml", "r") as file:
+    config = yaml.safe_load(file)
+
+directory = os.path.dirname(config["saving_dir_noraxon"])
+if directory and not os.path.exists(directory):
+    os.makedirs(directory)
+
 class Merger():
     def __init__(self,folder_path , emg_path,imu_path) :
         self.folder_path= folder_path
@@ -88,20 +96,42 @@ class Merger():
             raise ValueError("Invalid method. Choose 'repeat' or 'average'.")
         
         return merged_df
+    
+    def add_time_stamps(self, final_df):
+        text_dir = directory + "/" + config["first_name"] + config["last_name"] + "_timestamps.txt"
+        with open(text_dir, "r") as f:
+            first_timestamp, last_timestamp = map(float, f.read().strip().split(","))
+        total_rows = len(final_df)
+        interval = (last_timestamp - first_timestamp) / (total_rows - 1)
+        final_df['timestamp'] = [first_timestamp + i * interval for i in range(total_rows)]
+        merged_df=final_df
+        return merged_df
 
+        
+
+    def merge_with_labels(merged_df,label_df):
+        first_merged_df_ts = merged_df.loc[0,"timestamp"]
+        first_label_df_ts = label_df.loc[0,"time_stamp"]
+        merged_with_labels_df =None 
+        return merged_with_labels_df 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Merge IMU&EMG data files.")
     parser.add_argument("--path", type=str, required=True, help="Path to the folder containing IMU data CSV files.")
     parser.add_argument("--imu_path", type=str, default="merged_imu_data.csv", help="Output file name for the merged imu CSV (default: merged_imu_data.csv)")
-    parser.add_argument("--emg_path", type=str, default="merged_emg_data.csv", help="Output file name for merged emg csv")
+    parser.add_argument("--emg_path", type=str, default="label_data.csv", help="Output file name for merged emg csv")
+    parser.add_argument("--label_path", type=str, default="merged_emg_data.csv", help="Output file name for merged emg csv")
+    
     parser.add_argument("--final_path", type=str, default="merged.csv", help="Output file name for merged emg csv")
     
     args = parser.parse_args()
     
     merger = Merger(folder_path=args.path ,imu_path=args.imu_path , emg_path = args.emg_path )
     final_df = merger.get_same_freq(merger.merge_imu_data(),merger.merge_emg_data(),200,2000,"average")
-    final_df.to_csv(args.final_path, index=False)
+    final_df = merger.add_time_stamps(final_df)
+    label_df = pd.read_csv(args.label_path)
+    final_df = merger.merge_with_labels(final_df,label_df)
+    final_df.to_csv(args.final_path)
 
     print(final_df.head())
     print(len(final_df))
