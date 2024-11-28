@@ -7,10 +7,11 @@ import os
 
 with open("config.yaml", "r") as file:
     config = yaml.safe_load(file)
+directory = os.path.join(config["saving_dir"], f"{config['first_name']}_{config['last_name']}_{config['experiment_name']}")
 
-directory = os.path.dirname(config["processed_data_dir"])
 if directory and not os.path.exists(directory):
     os.makedirs(directory)
+
 
 def downsample(data, k=10):
     # Ensure the data is sorted by time
@@ -29,8 +30,8 @@ def downsample(data, k=10):
     return downsampled
 
 
-def plot_emg_data(file_path, window_size=4000, play_all=False):
-    df = pd.read_csv(file_path)
+def plot_emg_data( window_size=4000, play_all=False):
+    df = pd.read_csv(os.path.join(directory,"merged_emg_data.csv"))
     df= downsample(df)
     print(df.head())
 
@@ -78,8 +79,8 @@ def plot_emg_data(file_path, window_size=4000, play_all=False):
             break
 
 
-def plot_imu_data(imu_file_path, window_size=4000, play_all=False):
-    df = pd.read_csv(imu_file_path)
+def plot_imu_data( window_size=4000, play_all=False):
+    df = pd.read_csv(os.path.join(directory,"merged_imu_data.csv"))
     time_data = df['time']
     print(len(df.columns))
     # Define sensor groups
@@ -121,8 +122,6 @@ def plot_imu_data(imu_file_path, window_size=4000, play_all=False):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Plot EMG data with 8 channels.")
-    parser.add_argument("--emg_path", type=str, default= config["merged_emg_path"], help="Path to the merged EMG data CSV file.")
-    parser.add_argument("--imu_path", type=str, default= config["merged_imu_path"], help="Path to the merged imu data CSV file.")
     parser.add_argument("--sensor_numb", type=str, default= 1, help="to compare all data of a sensor")
     
     parser.add_argument("--window_size", type=int, default=4000, help="Number of samples per window (default: 4000 for 2 seconds at 2000 Hz).")
@@ -133,7 +132,7 @@ if __name__ == "__main__":
     
     if args.plot_imu:
         print("plotting imu")
-        plot_imu_data(args.imu_path, args.window_size, args.play_all)
+        plot_imu_data( args.window_size, args.play_all)
     
     print("ploting emg")
-    plot_emg_data(args.emg_path, args.window_size, args.play_all)
+    plot_emg_data( args.window_size, args.play_all)

@@ -1,3 +1,4 @@
+# saving dir : $saving_dir/${first_name}_{last_name}_{experiment_name}/
 first_name: aliso
 last_name: Baghernezhad
 experiment_name: second
@@ -12,8 +13,7 @@ file_path: /home/user/data/example.txt
 date: 11122024
 slides_images_path: experiment1_images
 saving_dir: ./data/
-saving_dir_noraxon: ./data_noraxon/
-
+saving_dir_noraxon: /data_noraxon/
 merged_imu_path: "./merged_imu.csv"
 merged_emg_path: "./merged_emg.csv"
 processed_data_dir : "./processed_data/"

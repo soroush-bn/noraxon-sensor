@@ -1,5 +1,13 @@
 import pandas as pd
+import yaml
+import os 
 
 
-df=  pd.read_csv("merged_imu_data.csv")
-print(df.head())
+with open("config.yaml", "r") as file:
+    config = yaml.safe_load(file)
+# directory = config["saving_dir"] +'/'+ config["first_name"]+'_' + config['last_name']+'_' + config["experiment_name"] 
+directory = config["saving_dir"] +'/'+ config["first_name"]+'_' + config['last_name']+'_' + config["experiment_name"] 
+print
+# directory = os.path.dirname()
+if directory and not os.path.exists(directory):
+    os.makedirs(directory)

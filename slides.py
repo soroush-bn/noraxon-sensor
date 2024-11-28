@@ -8,10 +8,15 @@ import argparse
 import subprocess
 import yaml
 import numpy as np
+import os
 
 # Load the YAML file
 with open("config.yaml", "r") as file:
     config = yaml.safe_load(file)
+
+directory = os.path.join(config["saving_dir"], f"{config['first_name']}_{config['last_name']}_{config['experiment_name']}")
+if directory and not os.path.exists(directory):
+    os.makedirs(directory)
 
 def timing(f):
     @wraps(f)
@@ -111,7 +116,7 @@ def save_labels(df):
 
     expanded_df = pd.concat([expanded_df, df.iloc[[-1]]], ignore_index=True)
     expanded_df.reset_index(drop=True, inplace=True)
-    expanded_df.to_csv(f'{config["saving_dir"]}/{config["experiment_name"]}_{config["first_name"]}_{config["last_name"]}_{config["date"]}_labels.csv')
+    expanded_df.to_csv(f'{directory}labels.csv')
     print("label df saved")
 
 if __name__=="__main__":
@@ -129,8 +134,7 @@ if __name__=="__main__":
     print("\n starting experiment with this config: \n")
     print(args)
     print()
-    recording_name = f'{config["saving_dir"]}/{config["experiment_name"]}_{config["first_name"]}_{config["last_name"]}_{config["date"]}.avi'
 
-    command = ["python", "recorder.py", "--name", recording_name]
+    command = ["python", "recorder.py"]
     subprocess.Popen(command)
     show_slides(args.experiment_name,args.first_name,args.last_name,args.reps,args.slides_images_path,args.gesture_duration,args.rest_duration)

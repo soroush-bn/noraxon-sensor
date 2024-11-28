@@ -4,62 +4,59 @@ import cv2
 import argparse
 import time
 import pandas as pd
+import yaml 
+import os
 
-# ctx = rs.context()
-# devices = ctx.query_devices()
-# for dev in devices:
-#     dev.hardware_reset()
+with open("config.yaml", "r") as file:
+    config = yaml.safe_load(file)
 
-#working one 
-def record(name="saved.avi"):
+directory = os.path.join(config["saving_dir"], f"{config['first_name']}_{config['last_name']}_{config['experiment_name']}")
+
+# Create directory if it doesn't exist
+if directory and not os.path.exists(directory):
+    os.makedirs(directory)
+
+def record():
     pipeline = rs.pipeline()
     config = rs.config()
-    # config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
     config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
 
-    color_path = name
-    # depth_path = 'V00P00A00C00_depth.avi'
-    colorwriter = cv2.VideoWriter(color_path, cv2.VideoWriter_fourcc(*'XVID'), 30, (640,480), 1)
-    # depthwriter = cv2.VideoWriter(depth_path, cv2.VideoWriter_fourcc(*'XVID'), 30, (640,480), 1)
+    # Use os.path.join() to create paths
+    color_path = os.path.join(directory, 'record.avi')
+    colorwriter = cv2.VideoWriter(color_path, cv2.VideoWriter_fourcc(*'XVID'), 30, (640, 480), 1)
+
     data = []
     pipeline.start(config)
     print("start recording")
-    frame_index=0
+    frame_index = 0
 
     try:
         while True:
             frames = pipeline.wait_for_frames()
-            # depth_frame = frames.get_depth_frame()
             color_frame = frames.get_color_frame()
-            if  not color_frame: #not depth_frame or
+            if not color_frame:
                 continue
             
-            #convert images to numpy arrays
-            # depth_image = np.asanyarray(depth_frame.get_data())
             color_image = np.asanyarray(color_frame.get_data())
-            # depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
-            
             colorwriter.write(color_image)
-            # depthwriter.write(depth_colormap)
             
-            # cv2.imshow('Stream', depth_colormap)
             data.append([time.time(), frame_index])
-            frame_index+=1
+            frame_index += 1
+
             if cv2.waitKey(1) == ord("q"):
                 break
     finally:
         colorwriter.release()
-        # depthwriter.release()
-        print("stoped recording")
+        print("stopped recording")
         pipeline.stop()
-        df = pd.DataFrame(data, columns=["time_stamp", "frame"])
-        df.to_csv(f"{name}_frame_time.csv", index=False)
-        print(f"Data saved to {name}_frame_time.csv")
 
+        # Use os.path.join() to save the CSV
+        csv_path = os.path.join(directory, 'frames.csv')
+        df = pd.DataFrame(data, columns=["time_stamp", "frame"])
+        df.to_csv(csv_path, index=False)
+        print(f"Data saved to {csv_path}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="no desc.")
-    parser.add_argument("--name", type=str, required=True)
-    
     args = parser.parse_args()
-    record(args.name)
+    record()
