@@ -17,3 +17,12 @@ saving_dir_noraxon: /data_noraxon/
 merged_imu_path: "./merged_imu.csv"
 merged_emg_path: "./merged_emg.csv"
 processed_data_dir : "./processed_data/"
+nsensors: 8
+W1: 1
+W2: 2
+W3: 3
+W4: 4
+F1: 5
+F2: 6
+F3: 7
+F4: 8
