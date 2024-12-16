@@ -91,22 +91,61 @@ class Signal:
         M2 = np.sum(psd_filtered * (freqs_filtered**2))
 
         return M0, M1, M2
-    def __get_activation_resting(self,channel_data,labels):
-        activation_data = []
-        rest_data = []
-
-        for d,l in zip(channel_data,labels):
-            if l=="rest":
-                rest_data.append(d)
-            else:
-                activation_data.append(d)
-        
-        return activation_data,rest_data
     
-    def FWR(self,forearm_data, wrist_data,labels ):
-        forearm_activation, forearm_resting = self.__get_activation_resting(forearm_data,labels)
-        wrist_activation, wrist_resting = self.__get_activation_resting(wrist_data,labels)
+    def _get_gestures_dataframes(self,df):
+        dataframes = []
+        temp = df.loc[0,"label"]
+        pre_i=0
+        for i in range(len(df)):
+            if df.loc[i,"label"]!=temp and df.loc[i,"label"]!="rest": 
+                dataframes.append(df.iloc[pre_i:i])
+                pre_i=i
+                temp = df.loc[i,"label"]
+        # if len(dataframes)!= config["number_of_gestures"]: raise Exception("incomplete data")
+        return dataframes
+    def __get_activation_resting(self,df):
+        active_df =  df[df["label"] != "rest"]
+        rest_df = df[df["label"] == "rest"]
+        forearm_activation = active_df[[
+        f'emg{config["F1"]}', 
+        f'emg{config["F2"]}', 
+        f'emg{config["F3"]}', 
+        f'emg{config["F4"]}'
+        ]].mean(axis=1)
+
+        forearm_resting = rest_df[[
+            f'emg{config["F1"]}', 
+            f'emg{config["F2"]}', 
+            f'emg{config["F3"]}', 
+            f'emg{config["F4"]}'
+        ]].mean(axis=1)
+
+        wrist_activation = active_df[[
+            f'emg{config["W1"]}', 
+            f'emg{config["W2"]}', 
+            f'emg{config["W3"]}', 
+            f'emg{config["W4"]}'
+        ]].mean(axis=1)
+
+        wrist_resting = rest_df[[
+            f'emg{config["W1"]}', 
+            f'emg{config["W2"]}', 
+            f'emg{config["W3"]}', 
+            f'emg{config["W4"]}'
+        ]].mean(axis=1)
+
+        raw_signal = df[[
+            f'emg{config["F1"]}', 
+            f'emg{config["F2"]}', 
+            f'emg{config["F3"]}', 
+            f'emg{config["F4"]}'
+        ]].mean(axis=1)
         
+        return forearm_activation,forearm_resting,wrist_activation,wrist_resting,raw_signal
+    
+    def FWR(self,forearm_activation,forearm_resting, wrist_activation,wrist_resting ):
+        # forearm_activation, forearm_resting = self.__get_activation_resting(forearm_data,labels)
+        # wrist_activation, wrist_resting = self.__get_activation_resting(wrist_data,labels)
 
         forearm_activation = self.notch_filter(forearm_activation)
         forearm_resting = self.notch_filter(forearm_resting)
@@ -123,16 +162,18 @@ class Signal:
         rms_wrist_activation = self.rms(wrist_activation)
         rms_wrist_resting = self.rms(wrist_resting)
 
-        numerator = np.sqrt(rms_forearm_activation**2 - rms_forearm_resting**2)
-        denominator = np.sqrt(rms_wrist_activation**2 - rms_wrist_resting**2)
+        numerator = np.sqrt(np.abs(rms_forearm_activation**2 - rms_forearm_resting**2))
+        denominator = np.sqrt(np.abs(rms_wrist_activation**2 - rms_wrist_resting**2))
         if denominator == 0:
             raise ValueError("Denominator in FWR calculation is zero, check signal data.")
         fwr = numerator / denominator
 
         return fwr
 
-    def SNR(self,channel_data):
-        activation_unfiltered_data , rest_unfiltered_data = self.__get_activation_resting(channel_data)
+    def SNR(self,forearm_activation,forearm_resting, wrist_activation,wrist_resting):
+        activation_unfiltered_data = np.mean([forearm_activation,wrist_activation],axis=0)
+        rest_unfiltered_data = np.mean([forearm_resting,wrist_resting],axis=0)
+
         activation_filtered_data = self.notch_filter(activation_unfiltered_data)
         activation_filtered_data = self.butter_bandpass_filter(activation_filtered_data,20,500) #change
 
@@ -176,52 +217,24 @@ class Signal:
         omega_value = 10 * np.log10((np.sqrt(M2 / M0)) / (M1 / M0))
 
         return omega_value
-    
-    def get_paper_result_for_one_participant_emg(self,participant_final_df):
-        df = participant_final_df 
-        labels = df["labels"].values
-        emg_F1 = df[f"emg{config["F1"]}"].values
-        emg_F2 = df[f"emg{config["F2"]}"].values
-        emg_F3 = df[f"emg{config["F3"]}"].values
-        emg_F4 = df[f"emg{config["F4"]}"].values
-        forearm_data =  np.mean([emg_F1, emg_F2, emg_F3, emg_F4], axis=0)
-        emg_W1 = df[f"emg{config["W1"]}"].values
-        emg_W2 = df[f"emg{config["W2"]}"].values
-        emg_W3 = df[f"emg{config["W3"]}"].values
-        emg_W4 = df[f"emg{config["W4"]}"].values
-        wrist_data =  np.mean([emg_W1, emg_W2, emg_W3, emg_W4], axis=0)
-        FWR = self.FWR(forearm_data,wrist_data)
-
-        #Average SNR across different wrist sensors
-        SNR_W= self.SNR(np.mean([emg_W1, emg_W2, emg_W3, emg_W4], axis=0))
-        #Average SNR across different forearm sensors
-        SNR_F= self.SNR(np.mean([emg_F1, emg_F2, emg_F3, emg_F4], axis=0))
-        SNR = (SNR_W + SNR_F)/2
-
-
-        #Average SMR across different wrist sensors
-        SMR_W= self.SMR(np.mean([emg_W1, emg_W2, emg_W3, emg_W4], axis=0))
-        #Average SMR across different forearm sensors
-        SMR_F= self.SMR(np.mean([emg_F1, emg_F2, emg_F3, emg_F4], axis=0))
-        SMR = (SMR_W + SMR_F)/2
-
-
-        #Average Omega across different wrist sensors
-        omega_W= self.omega(np.mean([emg_W1, emg_W2, emg_W3, emg_W4], axis=0))
-        #Average SMR across different forearm sensors
-        omega_F= self.omega(np.mean([emg_F1, emg_F2, emg_F3, emg_F4], axis=0))
-        omega = (omega_F + omega_W)/2
-
-
-        return {"FWR": FWR , "SNR": SNR , "SMR": SMR, "Omega": omega}
-
-
-
         
+    def calculate_per_gesture(self,df):
+        dfs = self._get_gestures_dataframes(df)
+        for gdf in dfs: 
+            label = gdf["label"].head(1).values
+            forearm_activation,forearm_resting,wrist_activation,wrist_resting,raw_signal= self.__get_activation_resting(gdf)
+            fwr = self.FWR(forearm_activation, forearm_resting, wrist_activation, wrist_resting)
+            snr = self.SNR(forearm_activation, forearm_resting, wrist_activation, wrist_resting)
+            smr = self.SMR(raw_signal)
+            omega = self.omega(raw_signal)
 
+            print("measures for label =  " + str(label))
+            print(f"FWR: {fwr}")
+            print(f"SNR: {snr}")
 
-
-
+            print(f"SMR: {smr}")
+            print(f"Omega: {omega}")
+            
 
 
 
@@ -244,19 +257,16 @@ def main():
 
     # Compute metrics
     fwr = signal_processor.FWR(forearm_activation, forearm_resting, wrist_activation, wrist_resting)
+    snr = signal_processor.SNR(forearm_activation, forearm_resting, wrist_activation, wrist_resting)
     smr = signal_processor.SMR(raw_signal)
     omega = signal_processor.omega(raw_signal)
 
-    # Compute spectral moments
-    freqs, psd = signal_processor.compute_psd(raw_signal)
-    M0, M1, M2 = signal_processor.compute_spectral_moments(psd, freqs)
-
     # Print results
     print(f"FWR: {fwr}")
+    print(f"SNR: {snr}")
+
     print(f"SMR: {smr}")
     print(f"Omega: {omega}")
-    print(f"Spectral Moments: M0={M0}, M1={M1}, M2={M2}")
-
 
 
 if __name__=="__main__":
