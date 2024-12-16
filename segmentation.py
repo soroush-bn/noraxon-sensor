@@ -52,3 +52,11 @@ class Segmentation:
                 concatenated_segments.append(segment_copy)
 
             return pd.concat(concatenated_segments, ignore_index=True)
+
+
+
+
+            # this is more of a windowing
+            # check jetson for inference of a small llm model 
+            #using more advance machine learning mdoel 
+            # using LLm voice interaction with four different cameras at different angle to guide user
