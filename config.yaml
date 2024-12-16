@@ -1,10 +1,11 @@
 # saving dir : $saving_dir/${first_name}_{last_name}_{experiment_name}/
-first_name: aliso
+first_name: so
 last_name: Baghernezhad
 experiment_name: second
-gesture_duration: 1 
-rest_duration: 1
-number_of_gesture_repetition: 1 
+gesture_duration: 2 
+rest_duration: 2
+number_of_gesture_repetition: 4
+number_of_gestures: 17
 emg_frequency: 2000
 IMU_frequency: 200
 camera_fps: 60
