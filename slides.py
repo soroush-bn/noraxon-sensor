@@ -94,7 +94,7 @@ def show_phase1(ax):
                     ha='center', va='top', fontsize=20, fontweight='bold', color='white')
 
     plt.pause(config["phase1_wait"])
-def save_labels(df):
+def save_labels(df): #populating labels
     if len(df)>200: 
         raise Exception("cannot extend the df multiple times!!!!")
     expanded_df = pd.DataFrame(columns=df.columns)
