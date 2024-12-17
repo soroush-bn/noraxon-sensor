@@ -1,3 +1,4 @@
+# this file should give you record.avi file in data/first_lastname_experimentname/ folder
 import pyrealsense2 as rs
 import numpy as np
 import cv2

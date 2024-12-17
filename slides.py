@@ -1,3 +1,4 @@
+# this file should give you labels.csv file
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import time
@@ -8,6 +9,7 @@ import argparse
 import subprocess
 import yaml
 import numpy as np
+import shutil
 import os
 
 # Load the YAML file
@@ -33,7 +35,7 @@ def timing(f):
 def show_slides(experiment_name,first_name,last_name,reps,slides_images_path,gesture_duration,rest_duration):
 
 
-    image_paths = [f"{slides_images_path}/{i}.jpg" for i in range(1, 17)]
+    image_paths = [f"{slides_images_path}/{i}.jpg" for i in range(1, 18)]
     df = pd.DataFrame(image_paths, columns=['image_path'])
 
     sample_img = mpimg.imread(df.iloc[0]['image_path'])
@@ -66,6 +68,7 @@ def show_slides(experiment_name,first_name,last_name,reps,slides_images_path,ges
 
 
     print("finished slides")
+    print(timestamped_labels)
     plt.ioff()
     # plt.show()
     plt.close()
@@ -116,7 +119,8 @@ def save_labels(df): #populating labels
 
     expanded_df = pd.concat([expanded_df, df.iloc[[-1]]], ignore_index=True)
     expanded_df.reset_index(drop=True, inplace=True)
-    expanded_df.to_csv(f'{directory}labels.csv')
+    saving_in =  os.path.join(directory, 'labels.csv')
+    expanded_df.to_csv(saving_in)
     print("label df saved")
 
 if __name__=="__main__":
@@ -138,3 +142,4 @@ if __name__=="__main__":
     command = ["python", "recorder.py"]
     subprocess.Popen(command)
     show_slides(args.experiment_name,args.first_name,args.last_name,args.reps,args.slides_images_path,args.gesture_duration,args.rest_duration)
+    shutil.copy(r"E:\projects\noraxon\noraxon-sensor\config.yaml",directory)

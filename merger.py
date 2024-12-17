@@ -111,30 +111,33 @@ class Merger():
 
         
 
-    def merge_with_labels(self,merged_df,label_df):
-        first_merged_df_ts = merged_df.loc[0,"timestamp"]
+    def merge_with_labels(self,merged_df,label_df): #may add shift to it 
+        # first_merged_df_ts = merged_df.loc[0,"timestamp"]
         # first_label_df_ts = label_df.loc[0,"time_stamp"]
+        merged_df = merged_df.iloc[:len(label_df)]
         names = ["Thumb Extension","index Extension","Middle Extension","Ring Extension",
              "Pinky Extension","Thumbs Up","Right Angle","Peace","OK","Horn","Hang Loose",
              "Power Grip","Hand Open","Wrist Extension","Wrist Flexion","Ulnar deviation","Radial Deviation"]
     
-        merged_df['label'] = ["None" for i in range(len(merged_df))]
-        sw= False
-        # for i in range(0,len(merged_df),config["IMU_frequency"]):
-        i=0 
-        labels = []
-        for g in range(len(names)):
-            for r in range(config["number_of_gesture_repetition"]):
-                labels.append(names[g])
-                labels.append("rest")
+        # merged_df['label'] = ["None" for i in range(len(merged_df))]
+        # sw= False
+        # # for i in range(0,len(merged_df),config["IMU_frequency"]):
+        # i=0 
+        # labels = []
+        # for g in range(len(names)):
+        #     for r in range(config["number_of_gesture_repetition"]):
+        #         labels.append(names[g])
+        #         labels.append("rest")
 
-        c=0 
-        for i in range(len(merged_df)):
-            merged_df.loc[i,"label"]  =labels[c]
-            if i% config["IMU_frequency"]==0 and i!=0:
-                c+=1 
+        # c=0 
+        # for i in range(len(merged_df)):
+        #     merged_df.loc[i,"label"]  =labels[c]
+        #     if i% config["IMU_frequency"]==0 and i!=0:
+        #         c+=1 
              
-        print("merged with labels")
+        # print("merged with labels")
+        merged_df = pd.concat([merged_df.reset_index(drop=True), label_df.reset_index(drop=True)], axis=1)
+
         return merged_df 
 
 if __name__ == "__main__":
@@ -142,18 +145,22 @@ if __name__ == "__main__":
     parser.add_argument("--path", type=str, required=True, help="Path to the folder containing IMU data CSV files.")
     # parser.add_argument("--imu_path", type=str, default="merged_imu_data.csv", help="Output file name for the merged imu CSV (default: merged_imu_data.csv)")
     # parser.add_argument("--emg_path", type=str, default="label_data.csv", help="Output file name for merged emg csv")
-    parser.add_argument("--label_path", type=str, default="merged_emg_data.csv", help="Output file name for merged emg csv")
+    # parser.add_argument("--label_path", type=str, default="merged_emg_data.csv", help="Output file name for merged emg csv")
     
     # parser.add_argument("--final_path", type=str, default="merged.csv", help="Output file name for merged emg csv")
     
     args = parser.parse_args()
     
     merger = Merger(folder_path=args.path )
-    final_df = merger.get_same_freq(merger.merge_imu_data(),merger.merge_emg_data(),200,2000,"average")
-    final_df = merger.add_time_stamps(final_df)
-    # label_df = pd.read_csv(args.label_path)
+    final_df = merger.get_same_freq(merger.merge_imu_data(),merger.merge_emg_data(),200,2000,"repeat")
+    # final_df = merger.add_time_stamps(final_df)
+    print(len(final_df))
+    print(" ")
+    labels_path = os.path.join(directory,"labels.csv")
+
+    label_df = pd.read_csv(labels_path)
     
-    final_df = merger.merge_with_labels(final_df,final_df)
+    final_df = merger.merge_with_labels(final_df,label_df)
     final_df_dir = os.path.join(directory,"final_df.csv")
     final_df.to_csv(final_df_dir)
 

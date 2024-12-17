@@ -1,10 +1,16 @@
+#this file should give you noraxon streamed data in noraxon.csv file amd first and last time stamps in a text file
 import requests
 import json
 import time
 import numpy as np
 import yaml
 import os
+with open("config.yaml", "r") as file:
+    config = yaml.safe_load(file)
 
+directory = os.path.join(config["saving_dir"], f"{config['first_name']}_{config['last_name']}_{config['experiment_name']}")
+if directory and not os.path.exists(directory):
+    os.makedirs(directory)
 
 def noraxon_stream_init(server_ip='192.168.0.106', port=9220):
     server_url = f"http://{server_ip}:{port}"
@@ -62,11 +68,14 @@ def noraxon_stream_collect(stream_config, seconds=10):
     for channel in stream_config['channels']:
         print (f"channels{channel}")
         data.append({'info': channel, 'samples': []})
-        
+    print(seconds)
     samples_remaining = [channel['sample_rate'] * seconds for channel in stream_config['channels']]
     last_data_timer = time.time()
     first_time = time.time()
+    print("total samples")
+    print(samples_remaining)
     while max(samples_remaining) > 0:   
+        print(max(samples_remaining))
         try:
             response = requests.get(f"{stream_config['server_url']}/samples")
             new_data = response.json()
@@ -95,8 +104,9 @@ def noraxon_stream_collect(stream_config, seconds=10):
                         samples_remaining[i] -= to_copy
                         break
         else:
-            if time.time() - last_data_timer > 500:
-                raise Exception("MR3 stream timeout. Check if HTTP Streaming is enabled and a measurement is currently running.")
+            if time.time() - last_data_timer > 10:
+                # raise Exception("MR3 stream timeout. Check if HTTP Streaming is enabled and a measurement is currently running.")
+                pass
     last_time = time.time()
     return data,first_time,last_time
 
@@ -138,22 +148,15 @@ def save_to_csv(data, filename):
                 # Write each sample as a separate row
                 writer.writerow([channel_name, channel_type, sample_rate, units, index, sample])
 
-# Example usage:
-
-
-with open("config.yaml", "r") as file:
-    config = yaml.safe_load(file)
-
-directory = os.path.dirname(config["saving_dir_noraxon"])
-if directory and not os.path.exists(directory):
-    os.makedirs(directory)
 
 if __name__=="__main__":
-    duration = 30
+    duration = (config["gesture_duration"] + config["rest_duration"]) *config["number_of_gesture_repetition"] *config["number_of_gestures"] 
+    print(duration)
     stream_config  = noraxon_stream_init('127.0.0.1', 9220)
     data,first,last = noraxon_stream_collect(stream_config, duration)
-    save_at = directory+"/" + config["first_name"] + config["last_name"]+ "_noraxon.csv"
+    save_at =  os.path.join(directory, 'noraxon.csv')
     save_to_csv(data, save_at)
+    
     text_dir = os.path.join(directory,"timestamps.txt")
     with open(text_dir,'w') as f:
         f.write(str(first))
@@ -161,5 +164,4 @@ if __name__=="__main__":
         f.write(str(last))
         f.write(",")
         f.write(str(duration))
-
     print("Data collected successfully!")

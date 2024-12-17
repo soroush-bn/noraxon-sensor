@@ -102,7 +102,7 @@ class Signal:
 
                 pre_i=i
                 temp = df.loc[i,"label"]
-        # if len(dataframes)!= config["number_of_gestures"]: raise Exception("incomplete data")
+        # if len(dataframes)!= config["number_of_gestures"]-1: raise Exception(f' incomplete data {config["number_of_gestures"]} vs {len(dataframes)}')
         return dataframes
     def __get_activation_resting(self,df):
         active_df =  df[df["label"] != "rest"]
@@ -166,8 +166,11 @@ class Signal:
         numerator = np.sqrt(np.abs(rms_forearm_activation**2 - rms_forearm_resting**2))
         denominator = np.sqrt(np.abs(rms_wrist_activation**2 - rms_wrist_resting**2))
         if denominator == 0:
-            raise ValueError("Denominator in FWR calculation is zero, check signal data.")
-        fwr = numerator / denominator
+            print( ValueError("Denominator in FWR calculation is zero, check signal data."))
+            fwr =0 
+        else:
+
+            fwr = numerator / denominator
 
         return fwr
 
@@ -204,8 +207,11 @@ class Signal:
         motion_artifacts_power = np.sum(psd_motion_artifacts)
 
         if motion_artifacts_power == 0:
-            raise ValueError("Motion artifacts power is zero. Check the signal data.")
-        smr = 10 * np.log10(total_power / motion_artifacts_power)
+            # raise ValueError("Motion artifacts power is zero. Check the signal data.")
+            smr =0
+        else:
+
+            smr = 10 * np.log10(total_power / motion_artifacts_power)
 
         return smr
 
@@ -214,14 +220,18 @@ class Signal:
         freqs, psd = self.compute_psd(channel_data)
         M0, M1, M2 = self.compute_spectral_moments(psd, freqs, max_freq=500)
         if M0 == 0 or M1 == 0:
-            raise ValueError("M0 or M1 is zero. Check the signal data for proper PSD computation.")
-        omega_value = 10 * np.log10((np.sqrt(M2 / M0)) / (M1 / M0))
+            # raise ValueError("M0 or M1 is zero. Check the signal data for proper PSD computation.")
+            omega_value=0
+        else:
+
+            omega_value = 10 * np.log10((np.sqrt(M2 / M0)) / (M1 / M0))
 
         return omega_value
         
-    def calculate_per_gesture(self,df):
-        dfs = self.get_gestures_dataframes(df)
+    def calculate_per_gesture(self,dfs):
+        print(len(dfs))
         for gdf in dfs: 
+            
             label = gdf["label"].head(1).values
             forearm_activation,forearm_resting,wrist_activation,wrist_resting,raw_signal= self.__get_activation_resting(gdf)
             fwr = self.FWR(forearm_activation, forearm_resting, wrist_activation, wrist_resting)
