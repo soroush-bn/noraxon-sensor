@@ -11,3 +11,7 @@ print
 # directory = os.path.dirname()
 if directory and not os.path.exists(directory):
     os.makedirs(directory)
+
+
+df = pd.read_csv(r"E:\projects\noraxon\noraxon-sensor\data\aliso_Baghernezhad_second\final_df.csv")
+print(df.head())

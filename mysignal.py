@@ -7,8 +7,7 @@ with open("config.yaml", "r") as file:
     config = yaml.safe_load(file)
 class Signal:
 
-    def __init__(self, sampling_rate,segment_length):
-        self.segment_length = segment_length
+    def __init__(self, sampling_rate):
         self.sampling_rate = sampling_rate
 
     def butter_bandpass_filter(self, data, lowcut, highcut, order=3):
@@ -92,13 +91,15 @@ class Signal:
 
         return M0, M1, M2
     
-    def _get_gestures_dataframes(self,df):
+    def get_gestures_dataframes(self,df):
         dataframes = []
         temp = df.loc[0,"label"]
         pre_i=0
         for i in range(len(df)):
             if df.loc[i,"label"]!=temp and df.loc[i,"label"]!="rest": 
                 dataframes.append(df.iloc[pre_i:i])
+                # print(len(df.iloc[pre_i:i]))
+
                 pre_i=i
                 temp = df.loc[i,"label"]
         # if len(dataframes)!= config["number_of_gestures"]: raise Exception("incomplete data")
@@ -219,7 +220,7 @@ class Signal:
         return omega_value
         
     def calculate_per_gesture(self,df):
-        dfs = self._get_gestures_dataframes(df)
+        dfs = self.get_gestures_dataframes(df)
         for gdf in dfs: 
             label = gdf["label"].head(1).values
             forearm_activation,forearm_resting,wrist_activation,wrist_resting,raw_signal= self.__get_activation_resting(gdf)

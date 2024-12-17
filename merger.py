@@ -149,13 +149,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     merger = Merger(folder_path=args.path )
-    print("0")
-    
     final_df = merger.get_same_freq(merger.merge_imu_data(),merger.merge_emg_data(),200,2000,"average")
-    print("1")
     final_df = merger.add_time_stamps(final_df)
     # label_df = pd.read_csv(args.label_path)
-    print("2")
     
     final_df = merger.merge_with_labels(final_df,final_df)
     final_df_dir = os.path.join(directory,"final_df.csv")

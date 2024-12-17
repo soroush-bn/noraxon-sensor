@@ -4,7 +4,7 @@ from mysignal import Signal
 import yaml 
 from segmentation import Segmentation
 from feature_extraction import Feature
-from classification import train_LDA
+from classification import train_LDA,train_svm
 with open("config.yaml", "r") as file:
     config = yaml.safe_load(file)
 
@@ -55,4 +55,5 @@ if __name__=="__main__":
     print(gesture_dfs[1].head())
 
     train_LDA(gesture_dfs)
+    train_svm(gesture_dfs)
     print("done")
