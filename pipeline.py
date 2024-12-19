@@ -55,7 +55,7 @@ if __name__=="__main__":
 
 
             all_channels_features.append(channel_features)  # Store the features for this window
-        print(f'time_domain features took: {np.mean(time_time_domain)} \n freq_domain features took: {np.mean(time_frequency_domain)}')
+        print(f'time_domain features took: {np.sum(time_time_domain)} \n freq_domain features took: {np.sum(time_frequency_domain)}')
         feature_columns = []
         for channel in names:
             for feature_name in feature.time_domain_features:
