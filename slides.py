@@ -98,8 +98,8 @@ def show_phase1(ax):
 
     plt.pause(config["phase1_wait"])
 def save_labels(df): #populating labels
-    if len(df)>200: 
-        raise Exception("cannot extend the df multiple times!!!!")
+    # if len(df)>2000: 
+    #     raise Exception("cannot extend the df multiple times!!!!")
     expanded_df = pd.DataFrame(columns=df.columns)
     for i in range(len(df) - 1):
         start_time = df.loc[i, 'time_stamp']

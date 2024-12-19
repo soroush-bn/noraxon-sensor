@@ -1,8 +1,8 @@
 # saving dir : $saving_dir/${first_name}_{last_name}_{experiment_name}/
-first_name: so
-last_name: Baghernezhad
-experiment_name: second
-gesture_duration: 2 
+first_name: testing
+last_name: workflow
+experiment_name: 10
+gesture_duration: 2
 rest_duration: 2
 number_of_gesture_repetition: 4
 number_of_gestures: 17
@@ -13,8 +13,9 @@ phase1_wait: 5
 window_size: 150
 overlapping: 75
 save_model : True
+model_path: /model/
 file_path: /home/user/data/example.txt
-date: 11122024
+date: 17122024
 slides_images_path: experiment1_images
 saving_dir: ./data/
 saving_dir_noraxon: /data_noraxon/
