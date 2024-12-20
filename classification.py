@@ -4,7 +4,7 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.svm import SVC
-
+from feature_extraction import sffs
 
 def train_LDA(gesture_dfs):
     # Step 1: Combine all gesture DataFrames into one large DataFrame
@@ -18,10 +18,12 @@ def train_LDA(gesture_dfs):
 
     # Convert labels to a NumPy array
     all_labels = np.array(all_labels)
-
     # Step 2: Split the data into training (80%) and testing (20%) sets
     X_train, X_test, y_train, y_test = train_test_split(all_data, all_labels, test_size=0.2, random_state=42, stratify=all_labels)
-
+    selected_features = sffs(X_train, y_train, max_features=10)
+    print(selected_features)
+    X_train = X_train[:, selected_features]
+    X_test = X_test[:, selected_features]
     # Step 3: Train the LDA classifier
     lda_classifier = LinearDiscriminantAnalysis()
 

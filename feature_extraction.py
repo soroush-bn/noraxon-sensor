@@ -2,6 +2,7 @@
 from numpy.typing import NDArray
 import numpy as np
 from scipy.linalg import toeplitz
+from sklearn.feature_selection import mutual_info_classif
 
 class Feature():
     def __init__(self) -> None:
@@ -156,3 +157,42 @@ class Feature():
         out = [self._MNF(power_spectrum,freqs),self._MDF(power_spectrum,freqs),self._PKF(power_spectrum,freqs),self._TTP(power_spectrum,freqs),*self._SM(power_spectrum,freqs),
                *self._FSR(power_spectrum,freqs),self._VCF(power_spectrum,freqs)]
         return out #dict(zip(self.frequency_domain_features,out))
+
+
+
+def sffs(X, y, max_features=10):
+    selected_features = []
+    candidate_features = list(range(X.shape[1]))
+
+    while len(selected_features) < max_features:
+        best_score = -np.inf
+        best_feature = None
+
+        for feature in candidate_features:
+            current_features = selected_features + [feature]
+            score = mutual_info_classif(X[:, current_features], y, discrete_features=True).mean()
+            if score > best_score:
+                best_score = score
+                best_feature = feature
+        
+        if best_feature is not None:
+            selected_features.append(best_feature)
+            candidate_features.remove(best_feature)
+
+        # Step 2: Floating Backward Elimination
+        if len(selected_features) > 2:
+            worst_score = np.inf
+            worst_feature = None
+            for feature in selected_features:
+                current_features = selected_features.copy()
+                current_features.remove(feature)
+                score = mutual_info_classif(X[:, current_features], y, discrete_features=True).mean()
+                if score < worst_score:
+                    worst_score = score
+                    worst_feature = feature
+            
+            if worst_feature is not None and worst_score < best_score:
+                selected_features.remove(worst_feature)
+                candidate_features.append(worst_feature)
+
+    return selected_features
