@@ -31,8 +31,11 @@ if __name__=="__main__":
     gesture_dfs = []
     if config["load_features"]==True:
         for n in range(config["number_of_gestures"]):
-            df = pd.read_csv(os.path.join(directory,f'gesture_features{n}.csv'))
-            gesture_dfs.append(df)
+            try:
+                df = pd.read_csv(os.path.join(directory,f'gesture_features{n}.csv'))
+                gesture_dfs.append(df)
+            except: 
+                break
     else:
             
         names = df.columns[2:-3]  # Get channel names (e.g., Channel1, Channel2, etc.)
