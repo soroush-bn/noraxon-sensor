@@ -31,3 +31,6 @@ F1: 5
 F2: 6
 F3: 7
 F4: 8
+load_features: True
+load_models: False
+feature_selection: False

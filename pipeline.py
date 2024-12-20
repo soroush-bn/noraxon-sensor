@@ -29,43 +29,48 @@ if __name__=="__main__":
 
     feature = Feature()
     gesture_dfs = []
+    if config["load_features"]==True:
+        for n in range(config["number_of_gestures"]):
+            df = pd.read_csv(f'gesture_features{n}.csv')
+            gesture_dfs.append(df)
+    else:
+            
+        names = df.columns[2:-3]  # Get channel names (e.g., Channel1, Channel2, etc.)
+        for gesture_df in tqdm(dfs_gestures, desc="Processing Gestures", unit="gesture"):   
+            
+            segmentation = Segmentation(gesture_df, config["emg_frequency"], config["window_size"], config["overlapping"])
+            segmented_dfs = segmentation.segment()  # Get segmented DataFrames
+            time_time_domain = []
+            time_frequency_domain = [] 
+            all_channels_features = []  # Store the features for all segments of this gesture
+            for df_segment in tqdm(segmented_dfs, desc="Segmenting Windows", unit="window", leave=False):  
 
-    names = df.columns[2:-3]  # Get channel names (e.g., Channel1, Channel2, etc.)
-    for gesture_df in tqdm(dfs_gestures, desc="Processing Gestures", unit="gesture"):   
-        
-        segmentation = Segmentation(gesture_df, config["emg_frequency"], config["window_size"], config["overlapping"])
-        segmented_dfs = segmentation.segment()  # Get segmented DataFrames
-        time_time_domain = []
-        time_frequency_domain = [] 
-        all_channels_features = []  # Store the features for all segments of this gesture
-        for df_segment in tqdm(segmented_dfs, desc="Segmenting Windows", unit="window", leave=False):  
-
-            channel_features = []  # Store features for this window
-            for channel in tqdm(names, desc="Extracting Features", unit="channel", leave=False):  
-                t_Start = time()
-                time_features = feature.get_time_features(df_segment[channel].values)  # Extract time features
-                t_end = time()
-                time_time_domain.append(t_end-t_Start)
-                freq_features = feature.get_freq_featrures(df_segment[channel].values)  # Extract frequency features
-                t_end= time()
-                time_frequency_domain.append(t_end-t_Start)
-                
-                channel_features.extend(time_features)  # Add time features
-                channel_features.extend(freq_features)  # Add frequency features
+                channel_features = []  # Store features for this window
+                for channel in tqdm(names, desc="Extracting Features", unit="channel", leave=False):  
+                    t_Start = time()
+                    time_features = feature.get_time_features(df_segment[channel].values)  # Extract time features
+                    t_end = time()
+                    time_time_domain.append(t_end-t_Start)
+                    freq_features = feature.get_freq_featrures(df_segment[channel].values)  # Extract frequency features
+                    t_end= time()
+                    time_frequency_domain.append(t_end-t_Start)
+                    
+                    channel_features.extend(time_features)  # Add time features
+                    channel_features.extend(freq_features)  # Add frequency features
 
 
-            all_channels_features.append(channel_features)  # Store the features for this window
-        print(f'time_domain features took: {np.sum(time_time_domain)} \n freq_domain features took: {np.sum(time_frequency_domain)}')
-        feature_columns = []
-        for channel in names:
-            for feature_name in feature.time_domain_features:
-                feature_columns.append(f"{channel}_{feature_name}")  # E.g., "Channel1_MAV", "Channel2_VAR"
-            for feature_name in feature.frequency_domain_features:
-                feature_columns.append(f"{channel}_{feature_name}")  # E.g., "Channel1_MNF", "Channel2_MDF"
+                all_channels_features.append(channel_features)  # Store the features for this window
+            print(f'time_domain features took: {np.sum(time_time_domain)} \n freq_domain features took: {np.sum(time_frequency_domain)}')
+            feature_columns = []
+            for channel in names:
+                for feature_name in feature.time_domain_features:
+                    feature_columns.append(f"{channel}_{feature_name}")  # E.g., "Channel1_MAV", "Channel2_VAR"
+                for feature_name in feature.frequency_domain_features:
+                    feature_columns.append(f"{channel}_{feature_name}")  # E.g., "Channel1_MNF", "Channel2_MDF"
 
-        gesture_features_df = pd.DataFrame(all_channels_features, columns=feature_columns)
-        gesture_dfs.append(gesture_features_df)  # Store the DataFrame for this gesture
-
+            gesture_features_df = pd.DataFrame(all_channels_features, columns=feature_columns)
+            gesture_dfs.append(gesture_features_df)  # Store the DataFrame for this gesture
+    
     train_LDA(gesture_dfs)
     train_svm(gesture_dfs)
     for i in range(len(gesture_dfs)):

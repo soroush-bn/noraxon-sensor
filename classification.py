@@ -6,6 +6,9 @@ from sklearn.metrics import accuracy_score, classification_report
 from sklearn.svm import SVC
 from feature_extraction import sffs
 import optuna
+import yaml
+with open("config.yaml", "r") as file:
+    config = yaml.safe_load(file)
 
 def train_LDA(gesture_dfs):
     # Step 1: Combine all gesture DataFrames into one large DataFrame
@@ -23,13 +26,11 @@ def train_LDA(gesture_dfs):
     # Step 2: Split the data into training (80%) and testing (20%) sets
     X_train, X_test, y_train, y_test = train_test_split(all_data, all_labels, test_size=0.2, random_state=42, stratify=all_labels)
 
-    # Feature selection using SFFS
-    selected_features = sffs(X_train, y_train, max_features=10)
-    print(f"Selected Features: {selected_features}")
-    
-    # Reduce the dataset to the selected features
-    X_train = X_train[:, selected_features]
-    X_test = X_test[:, selected_features]
+    if config["feature_selection"]==True:
+        selected_features = sffs(X_train, y_train, max_features=10)
+        print(f"Selected Features: {selected_features}")
+        X_train = X_train[:, selected_features]
+        X_test = X_test[:, selected_features]
 
     # Step 3: Define the objective function for Optuna
     def objective(trial):
@@ -101,13 +102,11 @@ def train_svm(gesture_dfs):
     # Step 2: Split the data into training (80%) and testing (20%) sets
     X_train, X_test, y_train, y_test = train_test_split(all_data, all_labels, test_size=0.2, random_state=42, stratify=all_labels)
 
-    # Feature selection using SFFS
-    selected_features = sffs(X_train, y_train, max_features=10)
-    print(f"Selected Features: {selected_features}")
-    
-    # Reduce the dataset to the selected features
-    X_train = X_train[:, selected_features]
-    X_test = X_test[:, selected_features]
+    if config["feature_selection"]==True:
+        selected_features = sffs(X_train, y_train, max_features=10)
+        print(f"Selected Features: {selected_features}")
+        X_train = X_train[:, selected_features]
+        X_test = X_test[:, selected_features]
 
     # Step 3: Define the objective function for Optuna
     def objective(trial):
