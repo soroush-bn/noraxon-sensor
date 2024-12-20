@@ -57,21 +57,25 @@ if __name__ == "__main__":
     gesture_dfs = []
 
     names = df.columns[2:-3]  # Get channel names (e.g., Channel1, Channel2, etc.)
-
+    if config["load_features"]==True:
+        for n in range(config["number_of_gestures"]):
+            df = pd.read_csv(f'gesture_features{n}.csv')
+            gesture_dfs.append(df)
+    else:
     # Parallelize gesture processing
-    for gesture_df in tqdm(dfs_gestures, desc="Processing Gestures", unit="gesture"):
-        gesture_features = process_gesture(gesture_df, config, feature, names)
+        for gesture_df in tqdm(dfs_gestures, desc="Processing Gestures", unit="gesture"):
+            gesture_features = process_gesture(gesture_df, config, feature, names)
 
-        # Create DataFrame for gesture features
-        feature_columns = []
-        for channel in names:
-            for feature_name in feature.time_domain_features:
-                feature_columns.append(f"{channel}_{feature_name}")
-            for feature_name in feature.frequency_domain_features:
-                feature_columns.append(f"{channel}_{feature_name}")
+            # Create DataFrame for gesture features
+            feature_columns = []
+            for channel in names:
+                for feature_name in feature.time_domain_features:
+                    feature_columns.append(f"{channel}_{feature_name}")
+                for feature_name in feature.frequency_domain_features:
+                    feature_columns.append(f"{channel}_{feature_name}")
 
-        gesture_features_df = pd.DataFrame(gesture_features, columns=feature_columns)
-        gesture_dfs.append(gesture_features_df)  # Store the DataFrame for this gesture
+            gesture_features_df = pd.DataFrame(gesture_features, columns=feature_columns)
+            gesture_dfs.append(gesture_features_df)  # Store the DataFrame for this gesture
 
     train_LDA(gesture_dfs)
     train_svm(gesture_dfs)
