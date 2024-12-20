@@ -31,7 +31,7 @@ if __name__=="__main__":
     gesture_dfs = []
     if config["load_features"]==True:
         for n in range(config["number_of_gestures"]):
-            df = pd.read_csv(f'gesture_features{n}.csv')
+            df = pd.read_csv(os.path.join(directory,f'gesture_features{n}.csv'))
             gesture_dfs.append(df)
     else:
             
@@ -70,7 +70,7 @@ if __name__=="__main__":
 
             gesture_features_df = pd.DataFrame(all_channels_features, columns=feature_columns)
             gesture_dfs.append(gesture_features_df)  # Store the DataFrame for this gesture
-    
+
     train_LDA(gesture_dfs)
     train_svm(gesture_dfs)
     for i in range(len(gesture_dfs)):
