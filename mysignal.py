@@ -2,6 +2,7 @@ import numpy as np
 from scipy.signal import butter, filtfilt, iirnotch,welch
 import pandas as pd
 import yaml
+from scipy.stats import f_oneway, ttest_ind
 
 with open("config.yaml", "r") as file:
     config = yaml.safe_load(file)
@@ -10,16 +11,25 @@ class Signal:
     def __init__(self, sampling_rate):
         self.sampling_rate = sampling_rate
 
+
+    def calculate_p_value(self, group1,group2):
+
+        t_stat, p_value = ttest_ind(group1, group2)
+        return p_value
+
+    def calculate_cohens_d(self, group1, group2):
+        """
+        Calculate Cohen's d to measure the effect size between two groups.
+        """
+        mean1, mean2 = np.mean(group1), np.mean(group2)
+        std1, std2 = np.std(group1, ddof=1), np.std(group2, ddof=1)
+        n1, n2 = len(group1), len(group2)
+        pooled_std = np.sqrt(((n1 - 1) * std1**2 + (n2 - 1) * std2**2) / (n1 + n2 - 2))
+        d_value = (mean1 - mean2) / pooled_std
+        return d_value
+    
+
     def butter_bandpass_filter(self, data, lowcut, highcut, order=3):
-        """
-        Apply a Butterworth bandpass filter to the data.
-        
-        :param data: Signal data to filter.
-        :param lowcut: Low cutoff frequency in Hz.
-        :param highcut: High cutoff frequency in Hz.
-        :param order: Order of the filter.
-        :return: Filtered signal.
-        """
         nyquist = 0.5 * self.sampling_rate
         low = lowcut / nyquist
         high = highcut / nyquist
@@ -27,14 +37,6 @@ class Signal:
         return filtfilt(b, a, data)
 
     def notch_filter(self, data, freq=60.0, Q=50.0):
-        """
-        Apply a notch filter to remove interference at the given frequency.
-        
-        :param data: Signal data to filter.
-        :param freq: Frequency to notch (default 60 Hz).
-        :param Q: Quality factor of the notch filter.
-        :return: Filtered signal.
-        """
         nyquist = 0.5 * self.sampling_rate
         w0 = freq / nyquist
         b, a = iirnotch(w0, Q)
@@ -47,24 +49,10 @@ class Signal:
     
 
     def compute_psd(self, signal, nperseg=1024):
-        """
-        Compute the Power Spectral Density (PSD) of a signal using Welch's method.
-        
-        :param signal: Input signal.
-        :param nperseg: Length of each segment for Welch's method.
-        :return: Frequencies and PSD values.
-        """
         freqs, psd = welch(signal, fs=self.sampling_rate, nperseg=nperseg)
         return freqs, psd
     
     def linear_fit_psd(self, freqs, psd):
-        """
-        Fit a straight line to the PSD from 0 Hz to the highest mean power point.
-        
-        :param freqs: Frequency values of the PSD.
-        :param psd: PSD values.
-        :return: PSD values along the linear fit line.
-        """
         max_power_idx = np.argmax(psd)
         max_freq = freqs[max_power_idx]
         slope = psd[max_power_idx] / max_freq
@@ -73,15 +61,8 @@ class Signal:
     
     def rms(self, data):
         return np.sqrt(np.mean(np.square(data)))
+    
     def compute_spectral_moments(self, psd, freqs, max_freq=500):
-        """
-        Compute spectral moments M0, M1, and M2.
-        
-        :param psd: Power Spectral Density values.
-        :param freqs: Frequency values corresponding to the PSD.
-        :param max_freq: Maximum frequency to consider for the calculation (e.g., 500 Hz).
-        :return: M0, M1, and M2 spectral moments.
-        """
         psd_filtered = psd[(freqs >= 0) & (freqs <= max_freq)]
         freqs_filtered = freqs[(freqs >= 0) & (freqs <= max_freq)]
 
@@ -135,14 +116,21 @@ class Signal:
             f'emg{config["W4"]}'
         ]].mean(axis=1)
 
-        raw_signal = df[[
+        raw_signal_forearm = df[[
             f'emg{config["F1"]}', 
             f'emg{config["F2"]}', 
             f'emg{config["F3"]}', 
             f'emg{config["F4"]}'
         ]].mean(axis=1)
         
-        return forearm_activation,forearm_resting,wrist_activation,wrist_resting,raw_signal
+        raw_signal_wrist = df[[
+            f'emg{config["W1"]}', 
+            f'emg{config["W2"]}', 
+            f'emg{config["W3"]}', 
+            f'emg{config["W4"]}'
+        ]].mean(axis=1)
+        
+        return forearm_activation,forearm_resting,wrist_activation,wrist_resting,raw_signal_forearm,raw_signal_wrist
     
     def FWR(self,forearm_activation,forearm_resting, wrist_activation,wrist_resting ):
         # forearm_activation, forearm_resting = self.__get_activation_resting(forearm_data,labels)
@@ -174,9 +162,9 @@ class Signal:
 
         return fwr
 
-    def SNR(self,forearm_activation,forearm_resting, wrist_activation,wrist_resting):
-        activation_unfiltered_data = np.mean([forearm_activation,wrist_activation],axis=0)
-        rest_unfiltered_data = np.mean([forearm_resting,wrist_resting],axis=0)
+    def SNR(self,activation,resting):
+        activation_unfiltered_data = activation#np.mean([forearm_activation,wrist_activation],axis=0)
+        rest_unfiltered_data = resting #np.mean([forearm_resting,wrist_resting],axis=0)
 
         activation_filtered_data = self.notch_filter(activation_unfiltered_data)
         activation_filtered_data = self.butter_bandpass_filter(activation_filtered_data,20,500) #change
@@ -186,12 +174,6 @@ class Signal:
     
     
     def SMR(self, channel_data):
-        """
-        Calculate the Signal-to-Motion Artifact Ratio (SMR).
-
-        :param raw_signal: Input raw signal.
-        :return: SMR value.
-        """
         # Compute the PSD of the raw signal
         freqs, psd = self.compute_psd(channel_data)
 
@@ -233,19 +215,34 @@ class Signal:
         for gdf in dfs: 
             
             label = gdf["label"].head(1).values
-            forearm_activation,forearm_resting,wrist_activation,wrist_resting,raw_signal= self.__get_activation_resting(gdf)
+            forearm_activation,forearm_resting,wrist_activation,wrist_resting,raw_signal_forearm,raw_signal_wrist= self.__get_activation_resting(gdf)
             fwr = self.FWR(forearm_activation, forearm_resting, wrist_activation, wrist_resting)
-            snr = self.SNR(forearm_activation, forearm_resting, wrist_activation, wrist_resting)
-            smr = self.SMR(raw_signal)
-            omega = self.omega(raw_signal)
+            #todo: these values should be calculated after getting participants groups            
+            # p_value_fwr = self.calculate_p_value(fwr, 1)
+            # d_value_fwr = self.calculate_cohens_d(fwr, 1)
 
-            print("measures for label =  " + str(label))
-            print(f"FWR: {fwr}")
-            print(f"SNR: {snr}")
+            snr_wrist = self.SNR( wrist_activation, wrist_resting)
+            snr_forearm = self.SNR( forearm_activation,forearm_resting)
+            # p_value_snr = self.calculate_p_value(snr_wrist,snr_forearm)
+            # d_value_snr= self.calculate_cohens_d(snr_wrist,snr_forearm)
 
-            print(f"SMR: {smr}")
-            print(f"Omega: {omega}")
+            smr_forearm = self.SMR(raw_signal_forearm)
+            smr_wrist= self.SMR(raw_signal_wrist)
+            # p_value_smr = self.calculate_p_value(smr_wrist,smr_forearm)
+            # d_value_smr= self.calculate_cohens_d(smr_wrist,smr_forearm)
+
+            omega_forearm = self.omega(raw_signal_forearm)
+            omega_wrist = self.omega(raw_signal_wrist)
+            # p_value_omega = self.calculate_p_value(omega_wrist,omega_forearm)
+            # d_value_omega= self.calculate_cohens_d(omega_wrist,omega_forearm)
             
+
+
+            print("Measures for label = " + str(label))
+            print(f"FWR: {fwr} | P-Value:  | Cohen's d: ")
+            print(f"SNR Wrist: {snr_wrist} | SNR Forearm: {snr_forearm} | P-Value:  | Cohen's d: ")
+            print(f"SMR Wrist: {smr_wrist} | SMR Forearm: {smr_forearm} | P-Value:  | Cohen's d: ")
+            print(f"Omega Wrist: {omega_wrist} | Omega Forearm: {omega_forearm} | P-Value: | Cohen's d:")
 
 
 
