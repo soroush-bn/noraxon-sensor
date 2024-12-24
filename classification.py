@@ -7,10 +7,13 @@ from sklearn.svm import SVC
 from feature_extraction import sffs
 import optuna
 import yaml
+import joblib
 with open("config.yaml", "r") as file:
     config = yaml.safe_load(file)
 
 def train_LDA(gesture_dfs):
+    # if config["load_model"]==True : 
+
     # Step 1: Combine all gesture DataFrames into one large DataFrame
     all_data = pd.DataFrame()  # Combined DataFrame for all gestures
     all_labels = []  # Store labels for each row in all_data
@@ -78,8 +81,7 @@ def train_LDA(gesture_dfs):
     # Print the classification report
     print("LDA Classification Report:")
     print(classification_report(y_test, y_pred))
-    # Step 5: Save the trained LDA model to disk (optional)
-    # joblib.dump(lda_classifier, 'lda_all_gestures_model.pkl')
+    joblib.dump(final_lda_classifier, 'final_lda_model.pkl')
 
     # Example of how to load the model later
     # lda_classifier = joblib.load('lda_all_gestures_model.pkl')
@@ -155,3 +157,5 @@ def train_svm(gesture_dfs):
     # Print the classification report
     print("SVM Classification Report:")
     print(classification_report(y_test, y_pred))
+
+    joblib.dump(final_svm_classifier, 'final_svm_model.pkl')
