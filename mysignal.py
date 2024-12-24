@@ -3,9 +3,16 @@ from scipy.signal import butter, filtfilt, iirnotch,welch
 import pandas as pd
 import yaml
 from scipy.stats import f_oneway, ttest_ind
+import os 
+
 
 with open("config.yaml", "r") as file:
     config = yaml.safe_load(file)
+
+directory = os.path.join(config["saving_dir"], f"{config['first_name']}_{config['last_name']}_{config['experiment_name']}")
+if directory and not os.path.exists(directory):
+    os.makedirs(directory)
+
 class Signal:
 
     def __init__(self, sampling_rate):
@@ -341,9 +348,17 @@ class Signal:
             omega_value = 10 * np.log10((np.sqrt(M2 / M0)) / (M1 / M0))
 
         return omega_value
-        
+    
+
+
     def calculate_per_gesture(self,dfs):
         print(len(dfs))
+        metrics_df = df = pd.DataFrame(columns=['fwr', 'fwr_accel', 'fwr_gyro','fae','fge','fme','wae','wge','wme','snr_wrist'
+                                                'snr_forearm','snr_wrist_accel','snr_forearm_accel','snr_wrist_gyro',
+                                                'snr_forearm_gyro','snr_wrist_mag','snr_forearm_mag','smr_forearm','smr_wrist',
+                                                'smr_forearm_accel','smr_wrist_accel','smr_forearm_gyro','smr_wrist_gyro','smr_forearm_mag','smr_wrist_mag',
+                                                'omega_forearm','omega_wrist',
+                                                'omega_forearm_accel','omega_wrist_accel','omega_forearm_gyro','omega_wrist_gyro','omega_forearm_mag','omega_wrist_mag'])  
         for gdf in dfs: 
             
             label = gdf["label"].head(1).values
@@ -352,7 +367,7 @@ class Signal:
             forearm_activation_gyro,forearm_resting_gyro,wrist_activation_gyro,wrist_resting_gyro,raw_signal_forearm_gyro,raw_signal_wrist_gyro= self.___get_activation_resting_IMU(gdf,"gyro")
             forearm_activation_mag,forearm_resting_mag,wrist_activation_mag,wrist_resting_mag,raw_signal_forearm_mag,raw_signal_wrist_mag= self.___get_activation_resting_IMU(gdf,"mag")
 
-            
+            """ EMG and imu forearm to wrist comparison """
             fwr = self.FWR(forearm_activation, forearm_resting, wrist_activation, wrist_resting)
             fwr_accel = self.FWR(forearm_activation_acc, forearm_resting_acc, wrist_activation_acc, wrist_resting_acc)
             fwr_gyro = self.FWR(forearm_activation_gyro, forearm_resting_gyro, wrist_activation_gyro, wrist_resting_gyro)
@@ -362,6 +377,16 @@ class Signal:
             #todo: these values should be calculated after getting participants groups            
             # p_value_fwr = self.calculate_p_value(fwr, 1)
             # d_value_fwr = self.calculate_cohens_d(fwr, 1)
+            fae = self.FWR(forearm_activation_acc,forearm_resting_acc,forearm_activation,forearm_resting)
+            fge = self.FWR(forearm_activation_gyro,forearm_resting_gyro,forearm_activation,forearm_resting)
+
+            fme = self.FWR(forearm_activation_mag,forearm_resting_mag,forearm_activation,forearm_resting)
+
+            wae = self.FWR(wrist_activation_acc,wrist_resting_acc,wrist_activation,wrist_resting)
+
+            wge = self.FWR(wrist_activation_gyro,wrist_resting_gyro,wrist_activation,wrist_resting)
+
+            wme = self.FWR(wrist_activation_mag,wrist_activation_mag,wrist_activation,wrist_resting)
 
             snr_wrist = self.SNR( wrist_activation, wrist_resting)
             snr_forearm = self.SNR( forearm_activation,forearm_resting)
@@ -397,7 +422,6 @@ class Signal:
             omega_wrist_mag = self.omega(raw_signal_wrist_mag)
             # p_value_omega = self.calculate_p_value(omega_wrist,omega_forearm)
             # d_value_omega= self.calculate_cohens_d(omega_wrist,omega_forearm)
-            
 
             print("--"*10)
             print("EMG Measures for label = " + str(label))
@@ -433,7 +457,43 @@ class Signal:
             print(f"SMR Wrist: {smr_wrist_mag} | SMR Forearm: {smr_forearm_mag} | P-Value:  | Cohen's d: ")
             print(f"Omega Wrist: {omega_wrist_mag} | Omega Forearm: {omega_forearm_mag} | P-Value: | Cohen's d:")
             print("--"*10)
-
+            new_row = {
+                'fwr': fwr,
+                'fwr_accel': fwr_accel,
+                'fwr_gyro': fwr_gyro,
+                'fae': fae,
+                'fge': fge,
+                'fme': fme,
+                'wae': wae,
+                'wge': wge,
+                'wme': wme,
+                'snr_wrist': snr_wrist,
+                'snr_forearm': snr_forearm,
+                'snr_wrist_accel': snr_wrist_accel,
+                'snr_forearm_accel': snr_forearm_accel,
+                'snr_wrist_gyro': snr_wrist_gyro,
+                'snr_forearm_gyro': snr_forearm_gyro,
+                'snr_wrist_mag': snr_wrist_mag,
+                'snr_forearm_mag': snr_forearm_mag,
+                'smr_forearm': smr_forearm,
+                'smr_wrist': smr_wrist,
+                'smr_forearm_accel': smr_forearm_accel,
+                'smr_wrist_accel': smr_wrist_accel,
+                'smr_forearm_gyro': smr_forearm_gyro,
+                'smr_wrist_gyro': smr_wrist_gyro,
+                'smr_forearm_mag': smr_forearm_mag,
+                'smr_wrist_mag': smr_wrist_mag,
+                'omega_forearm': omega_forearm,
+                'omega_wrist': omega_wrist,
+                'omega_forearm_accel': omega_forearm_accel,
+                'omega_wrist_accel': omega_wrist_accel,
+                'omega_forearm_gyro': omega_forearm_gyro,
+                'omega_wrist_gyro': omega_wrist_gyro,
+                'omega_forearm_mag': omega_forearm_mag,
+                'omega_wrist_mag': omega_wrist_mag
+            }
+            metrics_df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+        metrics_df.to_csv(os.path.join(directory,'metrics_df.csv'))
             #todo Qs: are these metrics correct for IMU? 
 
 
