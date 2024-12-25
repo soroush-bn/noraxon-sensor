@@ -492,7 +492,8 @@ class Signal:
                 'omega_forearm_mag': omega_forearm_mag,
                 'omega_wrist_mag': omega_wrist_mag
             }
-            metrics_df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+            metrics_df = pd.concat([metrics_df, pd.DataFrame([new_row])], ignore_index=True)
+        
         metrics_df.to_csv(os.path.join(directory,'metrics_df.csv'))
             #todo Qs: are these metrics correct for IMU? 
 
