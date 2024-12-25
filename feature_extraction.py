@@ -3,21 +3,32 @@ from numpy.typing import NDArray
 import numpy as np
 from scipy.linalg import toeplitz
 from sklearn.feature_selection import mutual_info_classif
+from time import time 
 
 class Feature():
     def __init__(self) -> None:
         self.time_domain_features = ["MAV","VAR","rms","WL","DAMV","DASDV","ZC","MYOP","WAMP","SSC","SampEn","HIST1","HIST2","HIST3","HIST4","HIST5","HIST6","HIST7","HIST8","HIST9","HIST10","AR1","AR2","AR3","AR4"]
         self.frequency_domain_features = ["MNF","MDF","PKF","TTP","SM1","SM2","SM3","FR","PSR","VCF"]
-
+        self.abs_v = None
+        self.diff_v = None
+        self.abs_diff_v= None
         
 
         
     def get_time_features(self,v:NDArray):
-        out = [self.MAV(v),self.VAR(v),self.rms(v),self.WL(v),self.DAMV(v),self.DASDV(v),self.ZC(v),self.MYOP(v),self.WAMP(v),self.SSC(v),self.SampEn(v),*self.HIST(v),*self.AR(v)]
+        if len(v) == 0:
+            raise ValueError("Input signal is empty.")
+        
+    def get_time_features(self,v:NDArray):
+        self.abs_v = np.abs(v)
+        self.diff_v = np.diff(v)
+        self.abs_diff_v = np.abs(self.diff_v)
+        
+        out = [self.MAV(v),self.VAR(v),self.rms(v),self.WL(v),self.DAMV(v),self.DASDV(v),self.ZC(v),self.MYOP(v),self.WAMP(v),self.SSC(v),*self.HIST(v),*self.AR(v)]
         return out #dict(zip(self.time_domain_features,out))
 
     def MAV(self,v: NDArray): #v is a window of a gesture repetition    
-        return np.mean(np.absolute(v))
+        return np.mean(self.abs_v)
     
     def VAR(self,v:NDArray):
         return np.var(v)
@@ -27,30 +38,30 @@ class Feature():
     
     def WL(self,v:NDArray):
         if v.ndim == 1:  # 1D signal
-            wl = np.sum(np.abs(np.diff(v)))
+            wl = np.sum(self.abs_diff_v)
         else:  # ND signal, calculate along axis=0
             wl = np.sum(np.abs(np.diff(v, axis=0)), axis=0)
         return wl
 
     def DAMV(self,v:NDArray):
-        return  np.mean(np.abs(np.diff(v)))
+        return  np.mean(self.abs_diff_v)
     
     def DASDV(self,v:NDArray):
-        return np.std(np.abs(np.diff(v)))
+        return np.std(self.abs_diff_v)
     
     def ZC(self,v:NDArray):
         return len(np.where(np.diff(np.sign(v)))[0])
     
     def MYOP(self,v:NDArray,threshold_ratio=0.1): # how to find this threshhold ? ? ?? ? ?
-        threshold = threshold_ratio * np.max(np.abs(v))  # Define the threshold as a ratio of the max absolute value
+        threshold = threshold_ratio * np.max(self.abs_v)  # Define the threshold as a ratio of the max absolute value
         if v.ndim == 1:  # 1D signal
-            active_samples = np.sum(np.abs(v) > threshold)
+            active_samples = np.sum(self.abs_v> threshold)
             mppr = (active_samples / len(v)) * 100
         return mppr
     
 
     def WAMP(self,v:NDArray,threshold=0.1): # again how to find this threshold
-        return np.sum(np.abs(np.diff(v)) > threshold)
+        return np.sum(self.abs_diff_v> threshold)
 
     def SSC(self,v:NDArray,threshold=0.1): # again
         f = lambda x: (x >= threshold).astype(float)
@@ -149,6 +160,7 @@ class Feature():
         return vcf
     
     def get_freq_featrures(self,gesture_signal: np.ndarray,sampling_rate=1000.0):
+        # t1= time()
         N = len(gesture_signal)
         fft_values = np.fft.fft(gesture_signal)
         fft_values = np.abs(fft_values[:N // 2])  
@@ -156,6 +168,9 @@ class Feature():
         freqs = np.fft.fftfreq(N, d=1 / sampling_rate)[:N // 2]
         out = [self._MNF(power_spectrum,freqs),self._MDF(power_spectrum,freqs),self._PKF(power_spectrum,freqs),self._TTP(power_spectrum,freqs),*self._SM(power_spectrum,freqs),
                *self._FSR(power_spectrum,freqs),self._VCF(power_spectrum,freqs)]
+        # t2 = time()
+        # print("freq features: ")
+        # print(t2-t1)
         return out #dict(zip(self.frequency_domain_features,out))
 
 
