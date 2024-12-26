@@ -7,7 +7,7 @@ from time import time
 
 class Feature():
     def __init__(self) -> None:
-        self.time_domain_features = ["MAV","VAR","rms","WL","DAMV","DASDV","ZC","MYOP","WAMP","SSC","SampEn","HIST1","HIST2","HIST3","HIST4","HIST5","HIST6","HIST7","HIST8","HIST9","HIST10","AR1","AR2","AR3","AR4"]
+        self.time_domain_features = ["MAV","VAR","rms","WL","DAMV","DASDV","ZC","MYOP","WAMP","SSC","HIST1","HIST2","HIST3","HIST4","HIST5","HIST6","HIST7","HIST8","HIST9","HIST10","AR1","AR2","AR3","AR4"]
         self.frequency_domain_features = ["MNF","MDF","PKF","TTP","SM1","SM2","SM3","FR","PSR","VCF"]
         self.abs_v = None
         self.diff_v = None
