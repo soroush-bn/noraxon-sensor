@@ -353,7 +353,7 @@ class Signal:
 
     def calculate_per_gesture(self,dfs):
         print(len(dfs))
-        metrics_df = df = pd.DataFrame(columns=['fwr', 'fwr_accel', 'fwr_gyro','fae','fge','fme','wae','wge','wme','snr_wrist'
+        metrics_df = df = pd.DataFrame(columns=['fwr', 'fwr_accel', 'fwr_gyro','fae','fge','fme','wae','wge','wme','snr_wrist',
                                                 'snr_forearm','snr_wrist_accel','snr_forearm_accel','snr_wrist_gyro',
                                                 'snr_forearm_gyro','snr_wrist_mag','snr_forearm_mag','smr_forearm','smr_wrist',
                                                 'smr_forearm_accel','smr_wrist_accel','smr_forearm_gyro','smr_wrist_gyro','smr_forearm_mag','smr_wrist_mag',
