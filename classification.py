@@ -8,8 +8,10 @@ from feature_extraction import sffs
 import optuna
 import yaml
 import joblib
+import os 
 with open("config.yaml", "r") as file:
     config = yaml.safe_load(file)
+directory = os.path.join(config["saving_dir"], f"{config['first_name']}_{config['last_name']}_{config['experiment_name']}")
 
 def train_LDA(gesture_dfs):
     # if config["load_model"]==True : 
@@ -56,7 +58,7 @@ def train_LDA(gesture_dfs):
 
     # Step 4: Run the Bayesian Optimization
     study = optuna.create_study(direction='maximize')
-    study.optimize(objective, n_trials=50)  # Run for 50 trials (can be increased for better results)
+    study.optimize(objective, n_trials=10)  # Run for 50 trials (can be increased for better results)
     
     # Get the best parameters and the best score
     best_params = study.best_params
@@ -81,7 +83,7 @@ def train_LDA(gesture_dfs):
     # Print the classification report
     print("LDA Classification Report:")
     print(classification_report(y_test, y_pred))
-    joblib.dump(final_lda_classifier, 'final_lda_model.pkl')
+    joblib.dump(final_lda_classifier, os.path.join(directory,'final_lda_model.pkl'))
 
     # Example of how to load the model later
     # lda_classifier = joblib.load('lda_all_gestures_model.pkl')
@@ -131,7 +133,7 @@ def train_svm(gesture_dfs):
 
     # Step 4: Run the Bayesian Optimization
     study = optuna.create_study(direction='maximize')
-    study.optimize(objective, n_trials=50)  # Run for 50 trials (can be increased for better results)
+    study.optimize(objective, n_trials=10)  # Run for 50 trials (can be increased for better results)
     
     # Get the best parameters and the best score
     best_params = study.best_params
@@ -158,4 +160,4 @@ def train_svm(gesture_dfs):
     print("SVM Classification Report:")
     print(classification_report(y_test, y_pred))
 
-    joblib.dump(final_svm_classifier, 'final_svm_model.pkl')
+    joblib.dump(final_svm_classifier, os.path.join(directory,'final_svm_model.pkl'))
