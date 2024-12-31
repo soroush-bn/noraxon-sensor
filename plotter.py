@@ -11,7 +11,7 @@ directory = os.path.join(config["saving_dir"], f"{config['first_name']}_{config[
 
 if directory and not os.path.exists(directory):
     os.makedirs(directory)
-label_maps = {"Thumb Extension": "TE","index Extension":"IE","Middle Extension":"ME","Ring Extension":"RE",
+label_maps = {"nan":"nan","Thumb Extension": "TE","index Extension":"IE","Middle Extension":"ME","Ring Extension":"RE",
              "Pinky Extension":"PE","Thumbs Up":"TU","Right Angle":"RA","Peace":"P","OK":"OK","Horn":"H","Hang Loose":"HL",
              "Power Grip":"PG","Hand Open":"HO","Wrist Extension":"WE","Wrist Flexion":"WF","Ulnar deviation":"UD","Radial Deviation":"RD","rest":"rest"}
 
@@ -65,7 +65,8 @@ def show_plot(df,time_data,start_idx,end_idx,channel_pairs,indices=None):
             plt.show()
 
 def plot_emg_data(df, window_size=400, play_all=False,show_label= True):
-    # df= downsample(df) #???? side effect bad
+    df = df.reset_index()
+    df= downsample(df) #???? side effect bad
     time_data = df['time']
     emg_channels_pairs = [
             [f'emg1', f'emg2'],
@@ -98,9 +99,10 @@ def show_imu_plot():
     pass
 
 def plot_imu_data(df, window_size=4000, play_all=False,show_label = True):
+    df = df.reset_index()
     df= downsample(df) #???? side effect bad
     time_data = df['time']
-    print(len(df.columns))
+    # print(len(df.columns))
     # Define sensor groups
     sensor_groups = {
         "accel": [f"sensor{i}_accel_{axis}" for i in range(1, 9) for axis in ["x", "y", "z"]],
@@ -187,10 +189,10 @@ if __name__ == "__main__":
     if args.plot_imu:
         print("plotting imu")
         dfs_gestures = signal_processor.get_gestures_dataframes(df)
-        
-        plot_imu_data(dfs_gestures[0], args.window_size, args.play_all)
+        for i in range(len(dfs_gestures)):
+            plot_imu_data(dfs_gestures[i], args.window_size, args.play_all,True)
     else :
         print("ploting emg")
         dfs_gestures = signal_processor.get_gestures_dataframes(df)
-
-        plot_emg_data(dfs_gestures[0], args.window_size, args.play_all,show_label= True)
+        for i in range(len(dfs_gestures)):
+            plot_emg_data(dfs_gestures[i], args.window_size, args.play_all,show_label= True)
