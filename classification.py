@@ -1,14 +1,21 @@
+from warnings import simplefilter
+# ignore all future warnings
+simplefilter(action='ignore', category=FutureWarning)
+
 import pandas as pd
 import numpy as np
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report
+from sklearn.feature_selection import SequentialFeatureSelector
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
-from feature_extraction import sffs
 import optuna
 import yaml
 import joblib
 import os 
+
+keepdims = True
 with open("config.yaml", "r") as file:
     config = yaml.safe_load(file)
 directory = os.path.join(config["saving_dir"], f"{config['first_name']}_{config['last_name']}_{config['experiment_name']}")
@@ -20,7 +27,7 @@ def train_LDA(gesture_dfs):
     all_data = pd.DataFrame()  # Combined DataFrame for all gestures
     all_labels = []  # Store labels for each row in all_data
 
-    for i, gesture_df in enumerate(gesture_dfs):
+    for i, gesture_df in enumerate(gesture_dfs):#~~REST label left outttttt
         # Combine each gesture's DataFrame into one large DataFrame
         all_data = pd.concat([all_data, gesture_df], axis=0)
         all_labels.extend([i] * len(gesture_df))  # Create labels corresponding to the gesture
@@ -30,12 +37,17 @@ def train_LDA(gesture_dfs):
 
     # Step 2: Split the data into training (80%) and testing (20%) sets
     X_train, X_test, y_train, y_test = train_test_split(all_data, all_labels, test_size=0.2, random_state=42, stratify=all_labels)
-
     if config["feature_selection"]==True:
-        selected_features = sffs(X_train, y_train, max_features=10)
-        print(f"Selected Features: {selected_features}")
-        X_train = X_train[:, selected_features]
-        X_test = X_test[:, selected_features]
+        # selected_features = sffs(X_train, y_train, max_features=10)
+        knn=KNeighborsClassifier(n_neighbors=i+1)
+        sffs = SequentialFeatureSelector(knn,n_features_to_select=320,n_jobs=-1,  
+           direction="forward")
+        sffs = sffs.fit(X_train, y_train)
+
+        print('\nSequential Forward Floating Selection (k=3):')
+        print(sffs.get_support(indices = True))
+        X_train = X_train.iloc[:, sffs.get_support(indices = True)]
+        X_test = X_test.iloc[:, sffs.get_support(indices = True)]
 
     # Step 3: Define the objective function for Optuna
     def objective(trial):
@@ -58,7 +70,7 @@ def train_LDA(gesture_dfs):
 
     # Step 4: Run the Bayesian Optimization
     study = optuna.create_study(direction='maximize')
-    study.optimize(objective, n_trials=10)  # Run for 50 trials (can be increased for better results)
+    study.optimize(objective, n_trials=50)  # Run for 50 trials (can be increased for better results)
     
     # Get the best parameters and the best score
     best_params = study.best_params
@@ -107,10 +119,17 @@ def train_svm(gesture_dfs):
     X_train, X_test, y_train, y_test = train_test_split(all_data, all_labels, test_size=0.2, random_state=42, stratify=all_labels)
 
     if config["feature_selection"]==True:
-        selected_features = sffs(X_train, y_train, max_features=10)
-        print(f"Selected Features: {selected_features}")
-        X_train = X_train[:, selected_features]
-        X_test = X_test[:, selected_features]
+        # selected_features = sffs(X_train, y_train, max_features=10)
+        knn=KNeighborsClassifier(n_neighbors=i+1)
+        sffs = SequentialFeatureSelector(knn,n_features_to_select=320,n_jobs=-1,  
+           direction="forward")
+        sffs = sffs.fit(X_train, y_train)
+
+        print('\nSequential Forward Floating Selection (k=3):')
+        print(sffs.get_support(indices = True))
+        X_train = X_train.iloc[:, sffs.get_support(indices = True)]
+        X_test = X_test.iloc[:, sffs.get_support(indices = True)]
+
 
     # Step 3: Define the objective function for Optuna
     def objective(trial):
@@ -133,7 +152,7 @@ def train_svm(gesture_dfs):
 
     # Step 4: Run the Bayesian Optimization
     study = optuna.create_study(direction='maximize')
-    study.optimize(objective, n_trials=10)  # Run for 50 trials (can be increased for better results)
+    study.optimize(objective, n_trials=50)  # Run for 50 trials (can be increased for better results)
     
     # Get the best parameters and the best score
     best_params = study.best_params
