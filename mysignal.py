@@ -5,7 +5,6 @@ import yaml
 from scipy.stats import f_oneway, ttest_ind
 import os 
 
-
 with open("config.yaml", "r") as file:
     config = yaml.safe_load(file)
 
@@ -93,13 +92,13 @@ class Signal:
         # if len(dataframes)!= config["number_of_gestures"]-1: raise Exception(f' incomplete data {config["number_of_gestures"]} vs {len(dataframes)}')
         return dataframes
     
-    def ___get_activation_resting_IMU(self,df,type="accel"):
+    def get_activation_resting_IMU(self,df,type="accel"):
         active_df =  df[df["label"] != "rest"]
         rest_df = df[df["label"] == "rest"]
         active = []
         rest= []  
 
-        forearm_activation= active_df[[
+        forearm_activation= np.sqrt(active_df[[
         f'sensor{config["F1"]}_{type}_x', 
         f'sensor{config["F2"]}_{type}_x', 
         f'sensor{config["F3"]}_{type}_x', 
@@ -112,9 +111,9 @@ class Signal:
         f'sensor{config["F2"]}_{type}_z', 
         f'sensor{config["F3"]}_{type}_z', 
         f'sensor{config["F4"]}_{type}_z',
-        ]].mean(axis=1)
+        ]].pow(2).sum(axis=1))
 
-        forearm_resting= rest_df[[
+        forearm_resting= np.sqrt(rest_df[[
         f'sensor{config["F1"]}_{type}_x', 
         f'sensor{config["F2"]}_{type}_x', 
         f'sensor{config["F3"]}_{type}_x', 
@@ -127,9 +126,9 @@ class Signal:
         f'sensor{config["F2"]}_{type}_z', 
         f'sensor{config["F3"]}_{type}_z', 
         f'sensor{config["F4"]}_{type}_z',
-        ]].mean(axis=1)
+        ]].pow(2).sum(axis=1))
 
-        wrist_activation= active_df[[
+        wrist_activation= np.sqrt(active_df[[
         f'sensor{config["W1"]}_{type}_x', 
         f'sensor{config["W2"]}_{type}_x', 
         f'sensor{config["W3"]}_{type}_x', 
@@ -142,9 +141,9 @@ class Signal:
         f'sensor{config["W2"]}_{type}_z', 
         f'sensor{config["W3"]}_{type}_z', 
         f'sensor{config["W4"]}_{type}_z',
-        ]].mean(axis=1)
+        ]].pow(2).sum(axis=1))
 
-        wrist_resting= rest_df[[
+        wrist_resting= np.sqrt(rest_df[[
         f'sensor{config["W1"]}_{type}_x', 
         f'sensor{config["W2"]}_{type}_x', 
         f'sensor{config["W3"]}_{type}_x', 
@@ -157,9 +156,9 @@ class Signal:
         f'sensor{config["W2"]}_{type}_z', 
         f'sensor{config["W3"]}_{type}_z', 
         f'sensor{config["W4"]}_{type}_z',
-        ]].mean(axis=1)
+        ]].pow(2).sum(axis=1))
 
-        forearm_raw= df[[
+        forearm_raw= np.sqrt(df[[
         f'sensor{config["F1"]}_{type}_x', 
         f'sensor{config["F2"]}_{type}_x', 
         f'sensor{config["F3"]}_{type}_x', 
@@ -172,9 +171,9 @@ class Signal:
         f'sensor{config["F2"]}_{type}_z', 
         f'sensor{config["F3"]}_{type}_z', 
         f'sensor{config["F4"]}_{type}_z',
-        ]].mean(axis=1)
+        ]].pow(2).sum(axis=1))
 
-        forearm_raw= df[[
+        forearm_raw= np.sqrt(df[[
         f'sensor{config["F1"]}_{type}_x', 
         f'sensor{config["F2"]}_{type}_x', 
         f'sensor{config["F3"]}_{type}_x', 
@@ -187,10 +186,10 @@ class Signal:
         f'sensor{config["F2"]}_{type}_z', 
         f'sensor{config["F3"]}_{type}_z', 
         f'sensor{config["F4"]}_{type}_z',
-        ]].mean(axis=1)
+        ]].pow(2).sum(axis=1))
 
 
-        wrist_raw= df[[
+        wrist_raw= np.sqrt(df[[
         f'sensor{config["W1"]}_{type}_x', 
         f'sensor{config["W2"]}_{type}_x', 
         f'sensor{config["W3"]}_{type}_x', 
@@ -203,9 +202,9 @@ class Signal:
         f'sensor{config["W2"]}_{type}_z', 
         f'sensor{config["W3"]}_{type}_z', 
         f'sensor{config["W4"]}_{type}_z',
-        ]].mean(axis=1)
+        ]].pow(2).sum(axis=1))
 
-        wrist_raw= df[[
+        wrist_raw= np.sqrt(df[[
         f'sensor{config["W1"]}_{type}_x', 
         f'sensor{config["W2"]}_{type}_x', 
         f'sensor{config["W3"]}_{type}_x', 
@@ -218,13 +217,10 @@ class Signal:
         f'sensor{config["W2"]}_{type}_z', 
         f'sensor{config["W3"]}_{type}_z', 
         f'sensor{config["W4"]}_{type}_z',
-        ]].mean(axis=1)
+        ]].pow(2).sum(axis=1))
         return forearm_activation,forearm_resting,wrist_activation,wrist_resting,forearm_raw,wrist_raw
 
-        
-
-
-    def __get_activation_resting(self,df):
+    def get_activation_resting(self,df):
         active_df =  df[df["label"] != "rest"]
         rest_df = df[df["label"] == "rest"]
         forearm_activation = active_df[[
@@ -271,7 +267,7 @@ class Signal:
         
         return forearm_activation,forearm_resting,wrist_activation,wrist_resting,raw_signal_forearm,raw_signal_wrist
     
-    def FWR(self,forearm_activation,forearm_resting, wrist_activation,wrist_resting ):
+    def FWR(self,forearm_activation,forearm_resting, wrist_activation,wrist_resting ,normalize= True):
         # forearm_activation, forearm_resting = self.__get_activation_resting(forearm_data,labels)
         # wrist_activation, wrist_resting = self.__get_activation_resting(wrist_data,labels)
 
@@ -289,9 +285,12 @@ class Signal:
         rms_forearm_resting = self.rms(forearm_resting)
         rms_wrist_activation = self.rms(wrist_activation)
         rms_wrist_resting = self.rms(wrist_resting)
-
-        numerator = np.sqrt(np.abs(rms_forearm_activation**2 - rms_forearm_resting**2))
-        denominator = np.sqrt(np.abs(rms_wrist_activation**2 - rms_wrist_resting**2))
+        if normalize:
+            numerator = np.sqrt(np.abs(rms_forearm_activation**2 - rms_forearm_resting**2)/np.abs(rms_forearm_resting))
+            denominator = np.sqrt(np.abs(rms_wrist_activation**2 - rms_wrist_resting**2)/np.abs(rms_wrist_resting))
+        else:  
+            numerator = np.sqrt(np.abs(rms_forearm_activation**2 - rms_forearm_resting**2))
+            denominator = np.sqrt(np.abs(rms_wrist_activation**2 - rms_wrist_resting**2))
         if denominator == 0:
             print( ValueError("Denominator in FWR calculation is zero, check signal data."))
             fwr =0 
@@ -301,12 +300,12 @@ class Signal:
 
         return fwr
 
-    def SNR(self,activation,resting):
+    def SNR(self,activation,resting,l=20,h=500,w0 =60 ,q=50): # we might need calibration data for this part ~~~~
         activation_unfiltered_data = activation#np.mean([forearm_activation,wrist_activation],axis=0)
         rest_unfiltered_data = resting #np.mean([forearm_resting,wrist_resting],axis=0)
 
-        activation_filtered_data = self.notch_filter(activation_unfiltered_data)
-        activation_filtered_data = self.butter_bandpass_filter(activation_filtered_data,20,500) #change
+        # activation_filtered_data = self.notch_filter(activation_unfiltered_data,freq=w0,Q=q)
+        activation_filtered_data = self.butter_bandpass_filter(activation_unfiltered_data,lowcut=l,highcut=h) #change
 
         return 20*np.log10(self.rms(activation_filtered_data)/self.rms(rest_unfiltered_data))
     
@@ -362,16 +361,16 @@ class Signal:
         for gdf in dfs: 
             
             label = gdf["label"].head(1).values
-            forearm_activation,forearm_resting,wrist_activation,wrist_resting,raw_signal_forearm,raw_signal_wrist= self.__get_activation_resting(gdf)
-            forearm_activation_acc,forearm_resting_acc,wrist_activation_acc,wrist_resting_acc,raw_signal_forearm_acc,raw_signal_wrist_acc= self.___get_activation_resting_IMU(gdf,"accel")
-            forearm_activation_gyro,forearm_resting_gyro,wrist_activation_gyro,wrist_resting_gyro,raw_signal_forearm_gyro,raw_signal_wrist_gyro= self.___get_activation_resting_IMU(gdf,"gyro")
-            forearm_activation_mag,forearm_resting_mag,wrist_activation_mag,wrist_resting_mag,raw_signal_forearm_mag,raw_signal_wrist_mag= self.___get_activation_resting_IMU(gdf,"mag")
+            forearm_activation,forearm_resting,wrist_activation,wrist_resting,raw_signal_forearm,raw_signal_wrist= self.get_activation_resting(gdf)
+            forearm_activation_acc,forearm_resting_acc,wrist_activation_acc,wrist_resting_acc,raw_signal_forearm_acc,raw_signal_wrist_acc= self.get_activation_resting_IMU(gdf,"accel")
+            forearm_activation_gyro,forearm_resting_gyro,wrist_activation_gyro,wrist_resting_gyro,raw_signal_forearm_gyro,raw_signal_wrist_gyro= self.get_activation_resting_IMU(gdf,"gyro")
+            forearm_activation_mag,forearm_resting_mag,wrist_activation_mag,wrist_resting_mag,raw_signal_forearm_mag,raw_signal_wrist_mag= self.get_activation_resting_IMU(gdf,"mag")
 
             """ EMG and imu forearm to wrist comparison """
-            fwr = self.FWR(forearm_activation, forearm_resting, wrist_activation, wrist_resting)
-            fwr_accel = self.FWR(forearm_activation_acc, forearm_resting_acc, wrist_activation_acc, wrist_resting_acc)
-            fwr_gyro = self.FWR(forearm_activation_gyro, forearm_resting_gyro, wrist_activation_gyro, wrist_resting_gyro)
-            fwr_mag = self.FWR(forearm_activation_mag, forearm_resting_mag, wrist_activation_mag, wrist_resting_mag)
+            fwr = self.FWR(forearm_activation, forearm_resting, wrist_activation, wrist_resting,normalize=False)
+            fwr_accel = self.FWR(forearm_activation_acc, forearm_resting_acc, wrist_activation_acc, wrist_resting_acc,normalize=False)
+            fwr_gyro = self.FWR(forearm_activation_gyro, forearm_resting_gyro, wrist_activation_gyro, wrist_resting_gyro,normalize=False)
+            fwr_mag = self.FWR(forearm_activation_mag, forearm_resting_mag, wrist_activation_mag, wrist_resting_mag,normalize=False)
 
 
             #todo: these values should be calculated after getting participants groups            
@@ -390,12 +389,12 @@ class Signal:
 
             snr_wrist = self.SNR( wrist_activation, wrist_resting)
             snr_forearm = self.SNR( forearm_activation,forearm_resting)
-            snr_wrist_accel = self.SNR( wrist_activation_acc,wrist_resting_acc)
-            snr_forearm_accel = self.SNR( forearm_activation_acc,forearm_resting_acc)
-            snr_wrist_gyro = self.SNR( wrist_activation_gyro,wrist_resting_gyro)
-            snr_forearm_gyro = self.SNR( forearm_activation_gyro,forearm_resting_gyro)
-            snr_wrist_mag = self.SNR( wrist_activation_mag,wrist_resting_mag)
-            snr_forearm_mag = self.SNR( forearm_activation_mag,forearm_resting_mag)
+            snr_wrist_accel = self.SNR( wrist_activation_acc,wrist_resting_acc,l=1,h=30,w0 = 50,q=50)
+            snr_forearm_accel = self.SNR( forearm_activation_acc,forearm_resting_acc,l=1,h=30,w0 = 50,q=50)
+            snr_wrist_gyro = self.SNR( wrist_activation_gyro,wrist_resting_gyro,l=1,h=30,w0 = 50,q=50)
+            snr_forearm_gyro = self.SNR( forearm_activation_gyro,forearm_resting_gyro,l=1,h=30,w0 = 50,q=50)
+            snr_wrist_mag = self.SNR( wrist_activation_mag,wrist_resting_mag,l=1,h=30,w0 = 50,q=50)
+            snr_forearm_mag = self.SNR( forearm_activation_mag,forearm_resting_mag,l=1,h=30,w0 = 50,q=50)
             # p_value_snr = self.calculate_p_value(snr_wrist,snr_forearm)
             # d_value_snr= self.calculate_cohens_d(snr_wrist,snr_forearm)
 
