@@ -5,7 +5,7 @@ experiment_name: 10
 gesture_duration: 2
 rest_duration: 2
 number_of_gesture_repetition: 4
-number_of_gestures: 17
+number_of_gestures: 15
 emg_frequency: 2000
 IMU_frequency: 200
 camera_fps: 60
@@ -31,6 +31,6 @@ F1: 5
 F2: 6
 F3: 7
 F4: 8
-load_features: True
+load_features: False
 load_models: False
-feature_selection: False
+feature_selection: True

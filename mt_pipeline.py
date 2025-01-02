@@ -25,7 +25,7 @@ def process_gesture(gesture_df, config, feature, names):
 
     # Use multiprocessing to process each segment
     for df_segment in tqdm(segmented_dfs, desc="Segmenting Windows", unit="window", leave=False):
-        with Pool(cpu_count()) as pool:
+        with Pool(cpu_count()-2) as pool:
             channel_features = pool.starmap(
                 process_channel,
                 [(channel, df_segment, feature) for channel in names]
