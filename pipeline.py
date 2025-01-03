@@ -99,19 +99,19 @@ if __name__=="__main__":
 
     #table8 
     table8_df = pd.DataFrame()
-    accuracy_anterior_wrist_lda = train_LDA(gesture_dfs,"table8_anterior_wrist_lda",f"{config["W1"]},{config["W2"]}","all","*")
-    accuracy_posterior_wrist_lda = train_LDA(gesture_dfs,"table8_posterior_wrist_lda",f"{config["W3"]},{config["W4"]}","all","*")
-    accuracy_anterior_forearm_lda = train_LDA(gesture_dfs,"table8_anterior_wrist_lda",f"{config["F1"]},{config["F2"]}","all","*")
-    accuracy_posterior_forearm_lda = train_LDA(gesture_dfs,"table8_posterior_wrist_lda",f"{config["F3"]},{config["F4"]}","all","*")
-    accuracy_wrist_lda = train_LDA(gesture_dfs,"table8_wrist_lda",f"{config["W1"]},{config["W2"]},{config["W3"]},{config["W4"]}","all","*")
-    accuracy_forearm_lda = train_LDA(gesture_dfs,"table8_forearm_lda",f"{config["F1"]},{config["F2"]},{config["F3"]},{config["F4"]}","all","*")
+    accuracy_anterior_wrist_lda = train_LDA(gesture_dfs,"table8_anterior_wrist_lda",f'{config["W1"]},{config["W2"]}',"all","*")
+    accuracy_posterior_wrist_lda = train_LDA(gesture_dfs,"table8_posterior_wrist_lda",f'{config["W3"]},{config["W4"]}',"all","*")
+    accuracy_anterior_forearm_lda = train_LDA(gesture_dfs,"table8_anterior_wrist_lda",f'{config["F1"]},{config["F2"]}',"all","*")
+    accuracy_posterior_forearm_lda = train_LDA(gesture_dfs,"table8_posterior_wrist_lda",f'{config["F3"]},{config["F4"]}',"all","*")
+    accuracy_wrist_lda = train_LDA(gesture_dfs,"table8_wrist_lda",f'{config["W1"]},{config["W2"]},{config["W3"]},{config["W4"]}',"all","*")
+    accuracy_forearm_lda = train_LDA(gesture_dfs,"table8_forearm_lda",f'{config["F1"]},{config["F2"]},{config["F3"]},{config["F4"]}',"all","*")
     
-    accuracy_anterior_wrist_svm = train_svm(gesture_dfs,"table8_anterior_wrist_svm",f"{config["W1"]},{config["W2"]}","all","*")
-    accuracy_posterior_wrist_svm = train_svm(gesture_dfs,"table8_posterior_wrist_svm",f"{config["W3"]},{config["W4"]}","all","*")
-    accuracy_anterior_forearm_svm = train_svm(gesture_dfs,"table8_anterior_wrist_svm",f"{config["F1"]},{config["F2"]}","all","*")
-    accuracy_posterior_forearm_svm = train_svm(gesture_dfs,"table8_posterior_wrist_svm",f"{config["F3"]},{config["F4"]}","all","*")
-    accuracy_wrist_svm = train_svm(gesture_dfs,"table8_wrist_svm",f"{config["W1"]},{config["W2"]},{config["W3"]},{config["W4"]}","all","*")
-    accuracy_forearm_svm = train_svm(gesture_dfs,"table8_forearm_svm",f"{config["F1"]},{config["F2"]},{config["F3"]},{config["F4"]}","all","*")
+    accuracy_anterior_wrist_svm = train_svm(gesture_dfs,"table8_anterior_wrist_svm",f'{config["W1"]},{config["W2"]}',"all","*")
+    accuracy_posterior_wrist_svm = train_svm(gesture_dfs,"table8_posterior_wrist_svm",f'{config["W3"]},{config["W4"]}',"all","*")
+    accuracy_anterior_forearm_svm = train_svm(gesture_dfs,"table8_anterior_wrist_svm",f'{config["F1"]},{config["F2"]}',"all","*")
+    accuracy_posterior_forearm_svm = train_svm(gesture_dfs,"table8_posterior_wrist_svm",f'{config["F3"]},{config["F4"]}',"all","*")
+    accuracy_wrist_svm = train_svm(gesture_dfs,"table8_wrist_svm",f'{config["W1"]},{config["W2"]},{config["W3"]},{config["W4"]}',"all","*")
+    accuracy_forearm_svm = train_svm(gesture_dfs,"table8_forearm_svm",f'{config["F1"]},{config["F2"]},{config["F3"]},{config["F4"]}',"all","*")
     
     new_row = {"accuracy_anterior_wrist_lda": accuracy_anterior_wrist_lda, 
                "accuracy_posterior_wrist_lda" : accuracy_posterior_wrist_lda,
