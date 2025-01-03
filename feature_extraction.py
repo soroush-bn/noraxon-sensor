@@ -4,7 +4,7 @@ import numpy as np
 from scipy.linalg import toeplitz
 from sklearn.feature_selection import mutual_info_classif
 from time import time 
-
+import re
 class Feature():
     def __init__(self) -> None:
         self.time_domain_features = ["MAV","VAR","rms","WL","DAMV","DASDV","ZC","MYOP","WAMP","SSC","HIST1","HIST2","HIST3","HIST4","HIST5","HIST6","HIST7","HIST8","HIST9","HIST10","AR1","AR2","AR3","AR4"]
@@ -172,6 +172,34 @@ class Feature():
         # print("freq features: ")
         # print(t2-t1)
         return out #dict(zip(self.frequency_domain_features,out))
+    
+def manual_feature_selector(df,sensor = "*",type= "*", feature="*"    ): 
+    columns =[] 
+    if sensor=="*":
+        s= '[0-8]'
+    else:
+        ss = sensor.replace(',','|') 
+        s= f'({ss})'
+    t= '(accel|mag|gyro)' if  type=="*" else type 
+    if type=="all":
+        t='(accel|mag|gyro|emg)'
+    f= '\w' if feature=="*" else feature
+
+            
+    imu_columns_pattern = f"sensor{s}_{t}_(x|y|z)_{f}"
+    emg_columns_pattern = f"{t}{s}_{f}"
+    final_pattern = f"{imu_columns_pattern}|{emg_columns_pattern}"
+    p = re.compile(final_pattern)
+    all_columns = df.columns
+    for c in all_columns:
+        r = p.match(c)
+        if r != None: 
+            columns.append(c)
+    
+    return columns
+        # feature wise:
+        # location wise 1-8
+        # sensor wise: emg, acc,.. 
 
 
 
