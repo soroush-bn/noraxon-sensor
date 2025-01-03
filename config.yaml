@@ -33,4 +33,5 @@ F3: 7
 F4: 8
 load_features: False
 load_models: False
-feature_selection: True
+feature_selection: False
+optimizer_n_trials: 50
