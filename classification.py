@@ -79,7 +79,7 @@ def train_LDA(gesture_dfs,model_name, sensor,type,feature):
 
     # Step 4: Run the Bayesian Optimization
     study = optuna.create_study(direction='maximize')
-    study.optimize(objective, n_trials=config["optimizer_n_trials"])  # Run for 50 trials (can be increased for better results)
+    study.optimize(objective, n_trials=config["optimizer_n_trials"],n_jobs=1,timeout=300)  # Run for 50 trials (can be increased for better results)
     
     # Get the best parameters and the best score
     best_params = study.best_params
@@ -163,7 +163,7 @@ def train_svm(gesture_dfs,model_name,sensor,type,feature):
 
     # Step 4: Run the Bayesian Optimization
     study = optuna.create_study(direction='maximize')
-    study.optimize(objective,  n_trials=config["optimizer_n_trials"])  # Run for 50 trials (can be increased for better results)
+    study.optimize(objective,  n_trials=config["optimizer_n_trials"],n_jobs=1,timeout=300)  # Run for 50 trials (can be increased for better results)
     
     # Get the best parameters and the best score
     best_params = study.best_params
