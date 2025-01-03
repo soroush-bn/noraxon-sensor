@@ -14,13 +14,18 @@ import optuna
 import yaml
 import joblib
 import os 
+from feature_extraction import manual_feature_selector
 
 keepdims = True
 with open("config.yaml", "r") as file:
     config = yaml.safe_load(file)
 directory = os.path.join(config["saving_dir"], f"{config['first_name']}_{config['last_name']}_{config['experiment_name']}")
+directory = os.path.join(directory,"model")
+if directory and not os.path.exists(directory):
+    os.makedirs(directory)
 
-def train_LDA(gesture_dfs):
+
+def train_LDA(gesture_dfs,model_name, sensor,type,feature):
     # if config["load_model"]==True : 
 
     # Step 1: Combine all gesture DataFrames into one large DataFrame
@@ -29,6 +34,7 @@ def train_LDA(gesture_dfs):
 
     for i, gesture_df in enumerate(gesture_dfs):#~~REST label left outttttt
         # Combine each gesture's DataFrame into one large DataFrame
+        gesture_df = gesture_df.loc[:,manual_feature_selector(gesture_df,sensor,type,feature)]
         all_data = pd.concat([all_data, gesture_df], axis=0)
         all_labels.extend([i] * len(gesture_df))  # Create labels corresponding to the gesture
 
@@ -37,7 +43,10 @@ def train_LDA(gesture_dfs):
 
     # Step 2: Split the data into training (80%) and testing (20%) sets
     X_train, X_test, y_train, y_test = train_test_split(all_data, all_labels, test_size=0.2, random_state=42, stratify=all_labels)
+
     if config["feature_selection"]==True:
+        print("starting feature selection")
+
         # selected_features = sffs(X_train, y_train, max_features=10)
         knn=KNeighborsClassifier(n_neighbors=i+1)
         sffs = SequentialFeatureSelector(knn,n_features_to_select=320,n_jobs=-1,  
@@ -70,7 +79,7 @@ def train_LDA(gesture_dfs):
 
     # Step 4: Run the Bayesian Optimization
     study = optuna.create_study(direction='maximize')
-    study.optimize(objective, n_trials=50)  # Run for 50 trials (can be increased for better results)
+    study.optimize(objective, n_trials=config["optimizer_n_trials"])  # Run for 50 trials (can be increased for better results)
     
     # Get the best parameters and the best score
     best_params = study.best_params
@@ -94,21 +103,23 @@ def train_LDA(gesture_dfs):
 
     # Print the classification report
     print("LDA Classification Report:")
-    print(classification_report(y_test, y_pred))
-    joblib.dump(final_lda_classifier, os.path.join(directory,'final_lda_model.pkl'))
-
+    meta_data = classification_report(y_test, y_pred)
+    print(meta_data)
+    joblib.dump(final_lda_classifier, os.path.join(directory,f'LDA_{model_name}.pkl'))
+    return accuracy,meta_data
     # Example of how to load the model later
     # lda_classifier = joblib.load('lda_all_gestures_model.pkl')
     # new_prediction = lda_classifier.predict(new_feature_vector)
 
 
-def train_svm(gesture_dfs):
+def train_svm(gesture_dfs,model_name,sensor,type,feature):
     # Step 1: Combine all gesture DataFrames into one large DataFrame
     all_data = pd.DataFrame()  # Combined DataFrame for all gestures
     all_labels = []  # Store labels for each row in all_data
 
     for i, gesture_df in enumerate(gesture_dfs):
         # Combine each gesture's DataFrame into one large DataFrame
+        gesture_df = gesture_df.loc[:,manual_feature_selector(gesture_df,sensor,type,feature)]
         all_data = pd.concat([all_data, gesture_df], axis=0)
         all_labels.extend([i] * len(gesture_df))  # Create labels corresponding to the gesture
 
@@ -117,14 +128,14 @@ def train_svm(gesture_dfs):
 
     # Step 2: Split the data into training (80%) and testing (20%) sets
     X_train, X_test, y_train, y_test = train_test_split(all_data, all_labels, test_size=0.2, random_state=42, stratify=all_labels)
-
     if config["feature_selection"]==True:
+        print("starting feature selection")
         # selected_features = sffs(X_train, y_train, max_features=10)
         knn=KNeighborsClassifier(n_neighbors=i+1)
         sffs = SequentialFeatureSelector(knn,n_features_to_select=320,n_jobs=-1,  
            direction="forward")
         sffs = sffs.fit(X_train, y_train)
-
+    
         print('\nSequential Forward Floating Selection (k=3):')
         print(sffs.get_support(indices = True))
         X_train = X_train.iloc[:, sffs.get_support(indices = True)]
@@ -152,7 +163,7 @@ def train_svm(gesture_dfs):
 
     # Step 4: Run the Bayesian Optimization
     study = optuna.create_study(direction='maximize')
-    study.optimize(objective, n_trials=50)  # Run for 50 trials (can be increased for better results)
+    study.optimize(objective,  n_trials=config["optimizer_n_trials"])  # Run for 50 trials (can be increased for better results)
     
     # Get the best parameters and the best score
     best_params = study.best_params
@@ -177,6 +188,7 @@ def train_svm(gesture_dfs):
 
     # Print the classification report
     print("SVM Classification Report:")
-    print(classification_report(y_test, y_pred))
-
-    joblib.dump(final_svm_classifier, os.path.join(directory,'final_svm_model.pkl'))
+    meta_data = classification_report(y_test, y_pred)
+    print(meta_data)
+    joblib.dump(final_svm_classifier, os.path.join(directory,f'SVM_{model_name}.pkl'))
+    return accuracy,meta_data
