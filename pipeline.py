@@ -65,9 +65,75 @@ if __name__=="__main__":
 
             gesture_features_df = pd.DataFrame(all_channels_features, columns=feature_columns)
             gesture_dfs.append(gesture_features_df)  # Store the DataFrame for this gesture
+    #table6
+    table6 = []
+    table6_df= pd.DataFrame()  
+       
+    for f in feature.time_domain_features + feature.frequency_domain_features: #this shoud be among all participant cause
+        # only 4 features is not enough for good accuracy
+        accuracy_lda_wrist,_ = train_LDA(gesture_dfs,f"wrist_{f}",f"{config['W1']},{config['W2']},{config['W3']},{config['W4']}","emg",f)
+        accuracy_lda_forearm,_ = train_LDA(gesture_dfs,f"forearm_{f}",f"{config['F1']},{config['F2']},{config['F3']},{config['F4']}","emg",f)
+        accuracy_svm_wrist,_ = train_svm(gesture_dfs,f"wrist_{f}",f"{config['W1']},{config['W2']},{config['W3']},{config['W4']}","emg",f)
+        accuracy_svm_forearm,_ = train_svm(gesture_dfs,f"forearm_{f}",f"{config['F1']},{config['F2']},{config['F3']},{config['F4']}","emg",f)
+        new_row = {
+            "accuracy_lda_wrist": accuracy_lda_wrist,
+            "accuracy_lda_forearm" : accuracy_lda_forearm ,
+             "accuracy_svm_wrist": accuracy_svm_wrist,
+             "accuracy_svm_forearm" : accuracy_svm_forearm
+        }
+        table6_df = pd.concat([table6_df, pd.DataFrame([new_row])], ignore_index=True)
+    table6_df.to_csv(os.path.join(directory,"table6_df.csv"))
+    
+    #table7
+    table7_df  = pd.DataFrame()
+    for t in ["accel","gyro","mag","*","emg"]:
+        accuracy_lda, _  =  train_LDA(gesture_dfs,f"table_7_lda_{t}","*",t,"*")
+        accuracy_svm, _  =  train_LDA(gesture_dfs,f"table_7_svm_{t}","*",t,"*")
+        new_row  = {
+            "accuracy_lda" : accuracy_lda, 
+            "accuracy_svm" : accuracy_svm 
+        }
+        table7_df = pd.concat([table7_df, pd.DataFrame([new_row])], ignore_index=True)
+    table7_df.to_csv(os.path.join(directory,"table7_df.csv"))
 
-    train_LDA(gesture_dfs)
-    train_svm(gesture_dfs)
+
+    #table8 
+    table8_df = pd.DataFrame()
+    accuracy_anterior_wrist_lda = train_LDA(gesture_dfs,"table8_anterior_wrist_lda",f"{config["W1"],config["W2"]}","all","*")
+    accuracy_posterior_wrist_lda = train_LDA(gesture_dfs,"table8_posterior_wrist_lda",f"{config["W3"],config["W4"]}","all","*")
+    accuracy_anterior_forearm_lda = train_LDA(gesture_dfs,"table8_anterior_wrist_lda",f"{config["F1"],config["F2"]}","all","*")
+    accuracy_posterior_forearm_lda = train_LDA(gesture_dfs,"table8_posterior_wrist_lda",f"{config["F3"],config["F4"]}","all","*")
+    accuracy_wrist_lda = train_LDA(gesture_dfs,"table8_wrist_lda",f"{config["W1"],config["W2"],config["W3"],config["W4"]}","all","*")
+    accuracy_forearm_lda = train_LDA(gesture_dfs,"table8_forearm_lda",f"{config["F1"],config["F2"],config["F3"],config["F4"]}","all","*")
+    
+    accuracy_anterior_wrist_svm = train_svm(gesture_dfs,"table8_anterior_wrist_svm",f"{config["W1"],config["W2"]}","all","*")
+    accuracy_posterior_wrist_svm = train_svm(gesture_dfs,"table8_posterior_wrist_svm",f"{config["W3"],config["W4"]}","all","*")
+    accuracy_anterior_forearm_svm = train_svm(gesture_dfs,"table8_anterior_wrist_svm",f"{config["F1"],config["F2"]}","all","*")
+    accuracy_posterior_forearm_svm = train_svm(gesture_dfs,"table8_posterior_wrist_svm",f"{config["F3"],config["F4"]}","all","*")
+    accuracy_wrist_svm = train_svm(gesture_dfs,"table8_wrist_svm",f"{config["W1"],config["W2"],config["W3"],config["W4"]}","all","*")
+    accuracy_forearm_svm = train_svm(gesture_dfs,"table8_forearm_svm",f"{config["F1"],config["F2"],config["F3"],config["F4"]}","all","*")
+    
+    new_row = {"accuracy_anterior_wrist_lda": accuracy_anterior_wrist_lda, 
+               "accuracy_posterior_wrist_lda" : accuracy_posterior_wrist_lda,
+               "accuracy_anterior_forearm_lda" : accuracy_anterior_forearm_lda,
+               "accuracy_posterior_forearm_lda" : accuracy_posterior_forearm_lda,
+               "accuracy_wrist_lda": accuracy_wrist_lda,
+               "accuracy_forearm_lda": accuracy_forearm_lda,
+
+               "accuracy_anterior_wrist_svm": accuracy_anterior_wrist_svm, 
+               "accuracy_posterior_wrist_svm" : accuracy_posterior_wrist_svm,
+               "accuracy_anterior_forearm_svm" : accuracy_anterior_forearm_svm,
+               "accuracy_posterior_forearm_svm" : accuracy_posterior_forearm_svm,
+               "accuracy_wrist_svm": accuracy_wrist_svm,
+               "accuracy_forearm_svm": accuracy_forearm_svm,
+    }
+    table8_df = pd.concat([table8_df, pd.DataFrame([new_row])], ignore_index=True)
+    table8_df.to_csv(os.path.join(directory,"table8_df.csv"))
+
+
+
+    # train_LDA(gesture_dfs)
+    # train_svm(gesture_dfs)
     for i in range(len(gesture_dfs)):
         gesture_dfs[i].to_csv(os.path.join(directory,f"gesture_features{i}.csv"))
 
